@@ -1,0 +1,6 @@
+@IETT.Api_HostAddress = http://localhost:5147
+
+GET {{IETT.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
