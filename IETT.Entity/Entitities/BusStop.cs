@@ -13,5 +13,9 @@ namespace IETT.Entity.Entities
         public decimal? Latitude { get; set; }
         public decimal? Longitude { get; set; }
         public string? LocationDescription { get; set; }
+
+        public ICollection<BusRouteStop> BusRouteStops { get; set; } = new List<BusRouteStop>();
+        public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
+
     }
 }

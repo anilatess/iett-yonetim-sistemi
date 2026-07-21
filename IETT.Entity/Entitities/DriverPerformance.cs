@@ -10,7 +10,7 @@ namespace IETT.Entity.Entities
 
         public int Score { get; set; }
         public string? PerformanceComment { get; set; }
-        public DateTime DateTime { get; set; }
+        public DateTime EvaluationDate { get; set; }
 
         public Driver Driver { get; set; } = null!;
         public Inspector Inspector { get; set; } = null!;

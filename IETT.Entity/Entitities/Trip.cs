@@ -19,5 +19,7 @@ namespace IETT.Entity.Entities
         public Vehicle Vehicle { get; set; } = null!;
         public Driver Driver { get; set; } = null!;
         public TripStatus? TripStatus { get; set; }
+
+        public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
     }
 }

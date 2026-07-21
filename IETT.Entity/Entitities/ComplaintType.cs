@@ -6,5 +6,7 @@ namespace IETT.Entity.Entities
     {
         public int Id { get; set; }
         public string ComplaintTypeName { get; set; } = string.Empty;
+
+        public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
     }
 }

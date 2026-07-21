@@ -1,8 +1,9 @@
-﻿using IETT.Entity.Interfaces;
+﻿using IETT.Entity.Entitities;
+using IETT.Entity.Interfaces;
 
 namespace IETT.Entity.Entities
 {
-    public class Investigation : IEntity
+    public class Investigation : BaseEntity, IEntity
     {
         public int Id { get; set; }
         public int ComplaintId { get; set; }
@@ -12,7 +13,6 @@ namespace IETT.Entity.Entities
         public string? InvestigationDescription { get; set; }
         public string? InvestigationResult { get; set; }
 
-        public DateTime CreatedDate { get; set; }
         public DateTime? ClosedDate { get; set; }
 
         public Complaint Complaint { get; set; } = null!;

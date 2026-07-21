@@ -17,5 +17,12 @@ namespace IETT.Entity.Entities
         public Garage Garage { get; set; } = null!;
         public Operator Operator { get; set; } = null!;
         public DriverStatus DriverStatus { get; set; } = null!;
+   
+        public ICollection<DriverCertificate> DriverCertificates { get; set; } = new List<DriverCertificate>();
+
+        public ICollection<DriverPerformance> DriverPerformances { get; set; } = new List<DriverPerformance>();
+
+        public ICollection<Trip> Trips { get; set; } = new List<Trip>();
+
     }
 }

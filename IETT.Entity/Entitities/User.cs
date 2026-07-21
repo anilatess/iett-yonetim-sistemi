@@ -1,9 +1,9 @@
-﻿using IETT.Entity.Entitites;
+﻿using IETT.Entity.Entitities;
 using IETT.Entity.Interfaces;
 
 namespace IETT.Entity.Entities
 {
-    public class User : IEntity
+    public class User : BaseEntity, IEntity
     {
         public int Id { get; set; }
         public int RoleId { get; set; }
@@ -16,7 +16,6 @@ namespace IETT.Entity.Entities
         public string UserName { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
 
-        public DateTime CreatedDate { get; set; }
 
         public Role Role { get; set; } = null!;
 
