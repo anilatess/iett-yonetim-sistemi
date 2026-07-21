@@ -1,7 +1,7 @@
 ﻿using IETT.Entity.Entities;
 using IETT.Entity.Interfaces;
 
-namespace IETT.Entity.Entitities
+namespace IETT.Entity.Entities
 {
     public class Role : IEntity
     {
