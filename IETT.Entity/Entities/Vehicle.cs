@@ -1,4 +1,5 @@
-﻿using IETT.Entity.Interfaces;
+﻿using IETT.Entity.Enums;
+using IETT.Entity.Interfaces;
 
 namespace IETT.Entity.Entities
 {
@@ -12,11 +13,14 @@ namespace IETT.Entity.Entities
         public string VehicleModel { get; set; } = string.Empty;
 
         public int Capacity { get; set; }
-        public int? VehicleStatusId { get; set; }
 
-        public VehicleStatus? VehicleStatus { get; set; }
+        public VehicleStatusEnum VehicleStatus { get; set; }
+            = VehicleStatusEnum.Active;
 
-        public ICollection<Trip> Trips { get; set; } = new List<Trip>();
-        public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
+        public ICollection<Trip> Trips { get; set; }
+            = new List<Trip>();
+
+        public ICollection<Complaint> Complaints { get; set; }
+            = new List<Complaint>();
     }
 }

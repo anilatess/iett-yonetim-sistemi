@@ -1,4 +1,5 @@
-﻿using IETT.Entity.Interfaces;
+﻿using IETT.Entity.Enums;
+using IETT.Entity.Interfaces;
 
 namespace IETT.Entity.Entities
 {
@@ -13,13 +14,14 @@ namespace IETT.Entity.Entities
         public TimeSpan DepertureTime { get; set; }
         public TimeSpan ArrivalTime { get; set; }
 
-        public int? TripStatusId { get; set; }
+        public TripStatusEnum TripStatus { get; set; }
+            = TripStatusEnum.Planned;
 
         public BusRoute BusRoute { get; set; } = null!;
         public Vehicle Vehicle { get; set; } = null!;
         public Driver Driver { get; set; } = null!;
-        public TripStatus? TripStatus { get; set; }
 
-        public ICollection<Complaint> Complaints { get; set; } = new List<Complaint>();
+        public ICollection<Complaint> Complaints { get; set; }
+            = new List<Complaint>();
     }
 }
