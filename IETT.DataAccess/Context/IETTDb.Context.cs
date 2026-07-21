@@ -1,5 +1,4 @@
 ﻿using IETT.Entity.Entities;
-using IETT.Entity.Entitities;
 using IETT.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
 

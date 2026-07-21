@@ -1,5 +1,4 @@
 ﻿using IETT.Entity.Interfaces;
-using System.Security.Cryptography.X509Certificates;
 
 namespace IETT.Entity.Entities
 {

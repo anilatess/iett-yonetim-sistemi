@@ -1,5 +1,5 @@
-﻿using IETT.Entity.Entitities;
-using IETT.Entity.Interfaces;
+﻿using IETT.Entity.Interfaces;
+
 
 namespace IETT.Entity.Entities
 {

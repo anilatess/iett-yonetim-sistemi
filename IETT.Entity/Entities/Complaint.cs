@@ -1,7 +1,5 @@
-﻿using IETT.Entity.Entitities;
-using IETT.Entity.Enums;
+﻿using IETT.Entity.Enums;
 using IETT.Entity.Interfaces;
-
 namespace IETT.Entity.Entities
 {
     public class Complaint : BaseEntity, IEntity

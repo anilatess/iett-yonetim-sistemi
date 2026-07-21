@@ -1,5 +1,4 @@
 ﻿using IETT.Entity.Interfaces;
-using System.Globalization;
 
 namespace IETT.Entity.Entities
 {
