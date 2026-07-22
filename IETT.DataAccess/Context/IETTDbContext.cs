@@ -17,6 +17,7 @@ namespace IETT.DataAccess.Context
         public DbSet<Garage> Garages { get; set; } = null!;
         public DbSet<Operator> Operators { get; set; } = null!;
 
+        public DbSet<VehicleStatus> VehicleStatuses { get; set; }
         public DbSet<Driver> Drivers { get; set; } = null!;
         public DbSet<DriverStatus> DriverStatuses { get; set; } = null!;
         public DbSet<DriverCertificate> DriverCertificates { get; set; } = null!;

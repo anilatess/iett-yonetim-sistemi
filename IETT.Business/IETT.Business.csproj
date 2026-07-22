@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Abstract\" />
+    <Folder Include="Concrete\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\IETT.DataAccess\IETT.DataAccess.csproj" />
+    <ProjectReference Include="..\IETT.Entity\IETT.Entity.csproj" />
+  </ItemGroup>
+
 </Project>
