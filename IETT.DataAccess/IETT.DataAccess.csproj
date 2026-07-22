@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\IETT.Core\IETT.Core.csproj" />
     <ProjectReference Include="..\IETT.Entity\IETT.Entity.csproj" />
   </ItemGroup>
 

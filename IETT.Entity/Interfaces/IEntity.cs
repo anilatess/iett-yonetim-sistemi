@@ -1,5 +1,6 @@
 ﻿namespace IETT.Entity.Interfaces
-{     public interface IEntity
+{
+    public interface IEntity
     {
     }
 }
