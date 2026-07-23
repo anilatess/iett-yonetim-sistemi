@@ -4,6 +4,7 @@ using IETT.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IETT.DataAccess.Migrations
 {
     [DbContext(typeof(IETTDbContext))]
-    partial class IETTDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722132828_AddVehicleStatusRelation")]
+    partial class AddVehicleStatusRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

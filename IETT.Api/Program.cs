@@ -4,10 +4,16 @@ using IETT.DataAccess.Abstract;
 using IETT.DataAccess.Concrete;
 using IETT.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler =
+            ReferenceHandler.IgnoreCycles;
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -17,7 +23,6 @@ builder.Services.AddDbContext<IETTDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
-
 builder.Services.AddScoped<IVehicleService, VehicleManager>();
 
 var app = builder.Build();

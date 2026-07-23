@@ -13,19 +13,18 @@ namespace IETT.DataAccess.Context
 
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
-
         public DbSet<Garage> Garages { get; set; } = null!;
         public DbSet<Operator> Operators { get; set; } = null!;
 
-        public DbSet<VehicleStatus> VehicleStatuses { get; set; }
+        public DbSet<Vehicle> Vehicles { get; set; } = null!;
+        public DbSet<VehicleStatus> VehicleStatuses { get; set; } = null!;
+
         public DbSet<Driver> Drivers { get; set; } = null!;
         public DbSet<DriverStatus> DriverStatuses { get; set; } = null!;
         public DbSet<DriverCertificate> DriverCertificates { get; set; } = null!;
         public DbSet<DriverPerformance> DriverPerformances { get; set; } = null!;
 
         public DbSet<Inspector> Inspectors { get; set; } = null!;
-
-        public DbSet<Vehicle> Vehicles { get; set; } = null!;
 
         public DbSet<BusRoute> BusRoutes { get; set; } = null!;
         public DbSet<BusStop> BusStops { get; set; } = null!;
@@ -66,7 +65,7 @@ namespace IETT.DataAccess.Context
                 }
             );
 
-            // Enum değerleri SQL tarafında int olarak saklanacak
+            // Enum değerlerini SQL tarafında int olarak saklar
             modelBuilder.Entity<Complaint>()
                 .Property(complaint => complaint.ComplaintStatus)
                 .HasConversion<int>();
@@ -75,9 +74,12 @@ namespace IETT.DataAccess.Context
                 .Property(trip => trip.TripStatus)
                 .HasConversion<int>();
 
+            // Vehicle ile VehicleStatus arasındaki ilişki
             modelBuilder.Entity<Vehicle>()
-                .Property(vehicle => vehicle.VehicleStatus)
-                .HasConversion<int>();
+                .HasOne(vehicle => vehicle.VehicleStatus)
+                .WithMany(status => status.Vehicles)
+                .HasForeignKey(vehicle => vehicle.VehicleStatusId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // Durak koordinatlarının hassasiyeti
             modelBuilder.Entity<BusStop>()
@@ -88,7 +90,7 @@ namespace IETT.DataAccess.Context
                 .Property(stop => stop.Longitude)
                 .HasPrecision(9, 6);
 
-            // Bağlı kayıtların otomatik silinmesini engeller
+            // Bağlı kayıtların otomatik olarak zincirleme silinmesini engeller
             foreach (var foreignKey in modelBuilder.Model
                          .GetEntityTypes()
                          .SelectMany(entity => entity.GetForeignKeys()))
