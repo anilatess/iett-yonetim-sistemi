@@ -1,6 +1,7 @@
 ﻿using IETT.Business.Abstract;
 using IETT.Entity.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace IETT.Api.Controllers
 {
@@ -19,7 +20,15 @@ namespace IETT.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var vehicles = await _vehicleService.GetAllAsync();
-            return Ok(vehicles);
+
+            var result = vehicles.Select(vehicle => new
+            {
+                vehicle.Id,
+                vehicle.DoorNumber,
+                vehicle.VehicleStatusId
+            }).ToList();
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -29,7 +38,10 @@ namespace IETT.Api.Controllers
 
             if (vehicle == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    message = "Araç bulunamadı."
+                });
             }
 
             return Ok(vehicle);
@@ -38,19 +50,39 @@ namespace IETT.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Add(Vehicle vehicle)
         {
-            await _vehicleService.AddAsync(vehicle);
+            try
+            {
+                await _vehicleService.AddAsync(vehicle);
 
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = vehicle.Id },
-                vehicle);
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = vehicle.Id },
+                    vehicle);
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest(new
+                {
+                    message = "Geçersiz araç durumu. Gönderilen VehicleStatusId veritabanında bulunamadı."
+                });
+            }
         }
 
         [HttpPut]
         public IActionResult Update(Vehicle vehicle)
         {
-            _vehicleService.Update(vehicle);
-            return NoContent();
+            try
+            {
+                _vehicleService.Update(vehicle);
+                return NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest(new
+                {
+                    message = "Araç güncellenemedi. VehicleStatusId geçersiz olabilir."
+                });
+            }
         }
 
         [HttpDelete("{id}")]
@@ -60,7 +92,10 @@ namespace IETT.Api.Controllers
 
             if (vehicle == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    message = "Silinecek araç bulunamadı."
+                });
             }
 
             _vehicleService.Delete(vehicle);
