@@ -1,4 +1,5 @@
-﻿using IETT.Business.Abstract;
+﻿using IETT.Entity.DTOs.Vehicles;    
+using IETT.Business.Abstract;
 using IETT.Entity.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -48,8 +49,14 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add(Vehicle vehicle)
+        public async Task<IActionResult> Add(CreateVehicleDto dto)
         {
+            var vehicle = new Vehicle
+            {
+                DoorNumber = dto.DoorNumber,
+                VehicleStatusId = dto.VehicleStatusId
+            };
+
             try
             {
                 await _vehicleService.AddAsync(vehicle);
@@ -57,7 +64,12 @@ namespace IETT.Api.Controllers
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = vehicle.Id },
-                    vehicle);
+                    new
+                    {
+                        vehicle.Id,
+                        vehicle.DoorNumber,
+                        vehicle.VehicleStatusId
+                    });
             }
             catch (DbUpdateException)
             {
@@ -69,8 +81,15 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPut]
-        public IActionResult Update(Vehicle vehicle)
+        public IActionResult Update(UpdateVehicleDto dto)
         {
+            var vehicle = new Vehicle
+            {
+                Id = dto.Id,
+                DoorNumber = dto.DoorNumber,
+                VehicleStatusId = dto.VehicleStatusId
+            };
+
             try
             {
                 _vehicleService.Update(vehicle);
