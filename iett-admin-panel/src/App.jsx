@@ -1,0 +1,333 @@
+import { useEffect, useState } from "react";
+import "./App.css";
+import iettLogo from "./assets/iett-logo.png";
+
+import {
+  createVehicle,
+  deleteVehicle,
+  getVehicles,
+  updateVehicle,
+} from "./services/vehicleService";
+
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [message, setMessage] = useState("");
+  const [modalError, setModalError] = useState("");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+
+  const [formData, setFormData] = useState({
+    doorNumber: "",
+    vehicleStatusId: 1,
+  });
+
+  async function loadVehicles() {
+    try {
+      setLoading(true);
+      setMessage("");
+
+      const data = await getVehicles();
+      setVehicles(data);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadVehicles();
+  }, []);
+
+  function openCreateModal() {
+    setModalError("");
+    setEditingVehicle(null);
+
+    setFormData({
+      doorNumber: "",
+      vehicleStatusId: 1,
+    });
+
+    setModalOpen(true);
+  }
+
+  function openEditModal(vehicle) {
+    setModalError("");
+    setEditingVehicle(vehicle);
+
+    setFormData({
+      doorNumber: vehicle.doorNumber,
+      vehicleStatusId: vehicle.vehicleStatusId,
+    });
+
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setEditingVehicle(null);
+    setModalError("");
+  }
+
+  function handleInputChange(event) {
+    const { name, value } = event.target;
+
+    setFormData((current) => ({
+      ...current,
+      [name]: name === "vehicleStatusId" ? Number(value) : value,
+    }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!formData.doorNumber.trim()) {
+      setModalError("Kapı numarası boş bırakılamaz.");
+      return;
+    }
+
+    try {
+      setModalError("");
+
+      if (editingVehicle) {
+        await updateVehicle({
+          id: editingVehicle.id,
+          doorNumber: formData.doorNumber.trim(),
+          vehicleStatusId: formData.vehicleStatusId,
+        });
+      } else {
+        await createVehicle({
+          doorNumber: formData.doorNumber.trim(),
+          vehicleStatusId: formData.vehicleStatusId,
+        });
+      }
+
+      closeModal();
+      await loadVehicles();
+    } catch (error) {
+      setModalError(error.message);
+    }
+  }
+
+  async function handleDelete(vehicle) {
+    const confirmed = window.confirm(
+      `${vehicle.doorNumber} numaralı aracı silmek istediğine emin misin?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setMessage("");
+
+      await deleteVehicle(vehicle.id);
+      await loadVehicles();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  return (
+    <div className={`admin-layout ${sidebarOpen ? "" : "sidebar-closed"}`}>
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <img src={iettLogo} alt="İETT Logo" />
+
+          {sidebarOpen && <span>İETT Admin</span>}
+        </div>
+
+        <nav>
+          <button type="button" className="menu-item active">
+            <span className="menu-icon">🚌</span>
+            {sidebarOpen && <span>Araçlar</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">👤</span>
+            {sidebarOpen && <span>Şoförler</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">🛣️</span>
+            {sidebarOpen && <span>Hatlar</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">📍</span>
+            {sidebarOpen && <span>Duraklar</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">📋</span>
+            {sidebarOpen && <span>Şikâyetler</span>}
+          </button>
+        </nav>
+      </aside>
+
+      <main className="content">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={() => setSidebarOpen((current) => !current)}
+        >
+          {sidebarOpen ? "←" : "→"}
+        </button>
+
+        <div className="page-header">
+          <div>
+            <h1>Araç Yönetimi</h1>
+            <p>Veritabanında kayıtlı araçları yönetebilirsiniz.</p>
+          </div>
+
+          <button
+            type="button"
+            className="add-button"
+            onClick={openCreateModal}
+          >
+            Yeni Araç
+          </button>
+        </div>
+
+        {message && <div className="alert-message">{message}</div>}
+
+        <div className="table-card">
+          {loading ? (
+            <div className="table-state">Araçlar yükleniyor...</div>
+          ) : vehicles.length === 0 ? (
+            <div className="table-state">Kayıtlı araç bulunamadı.</div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Kapı Numarası</th>
+                  <th>Durum ID</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {vehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>{vehicle.id}</td>
+                    <td>{vehicle.doorNumber}</td>
+
+                    <td>
+                      <span className="status-badge">
+                        {vehicle.vehicleStatusId}
+                      </span>
+                    </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        className="edit-button"
+                        onClick={() => openEditModal(vehicle)}
+                      >
+                        Düzenle
+                      </button>
+
+                      <button
+                        type="button"
+                        className="delete-button"
+                        onClick={() => handleDelete(vehicle)}
+                      >
+                        Sil
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </main>
+
+      {modalOpen && (
+        <div className="modal-backdrop" onMouseDown={closeModal}>
+          <div
+            className="modal-card"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <h2>{editingVehicle ? "Aracı Düzenle" : "Yeni Araç Ekle"}</h2>
+                <p>Araç bilgilerini doldurun.</p>
+              </div>
+
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeModal}
+              >
+                ×
+              </button>
+            </div>
+
+            {modalError && (
+              <div className="modal-error">
+                {modalError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="doorNumber">Kapı Numarası</label>
+
+                <input
+                  id="doorNumber"
+                  name="doorNumber"
+                  type="text"
+                  value={formData.doorNumber}
+                  onChange={handleInputChange}
+                  placeholder="Örnek: A-4001"
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="vehicleStatusId">Araç Durumu</label>
+
+                <select
+                  id="vehicleStatusId"
+                  name="vehicleStatusId"
+                  value={formData.vehicleStatusId}
+                  onChange={handleInputChange}
+                >
+                  <option value={1}>1 - Aktif</option>
+                  <option value={2}>2 - Bakımda</option>
+                  <option value={3}>3 - Servis Dışı</option>
+                  <option value={4}>4 - Arızalı</option>
+                </select>
+              </div>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="cancel-button"
+                  onClick={closeModal}
+                >
+                  Vazgeç
+                </button>
+
+                <button type="submit" className="save-button">
+                  {editingVehicle
+                    ? "Değişiklikleri Kaydet"
+                    : "Aracı Kaydet"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;

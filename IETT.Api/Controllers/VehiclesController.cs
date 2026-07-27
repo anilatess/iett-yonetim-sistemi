@@ -66,19 +66,16 @@ namespace IETT.Api.Controllers
         {
             try
             {
-                var existingVehicle = await _vehicleService.GetByIdAsync(dto.Id);
-
-                if (existingVehicle == null)
-                {
-                    return NotFound(new
-                    {
-                        message = "Güncellenecek araç bulunamadı."
-                    });
-                }
-
                 await _vehicleService.UpdateAsync(dto);
 
                 return NoContent();
+            }
+            catch (KeyNotFoundException exception)
+            {
+                return NotFound(new
+                {
+                    message = exception.Message
+                });
             }
             catch (DbUpdateException)
             {

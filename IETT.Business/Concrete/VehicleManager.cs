@@ -61,18 +61,19 @@ namespace IETT.Business.Concrete
             };
         }
 
-        public Task UpdateAsync(UpdateVehicleDto dto)
+        public async Task UpdateAsync(UpdateVehicleDto dto)
         {
-            var vehicle = new Vehicle
+            var vehicle = await _vehicleDal.GetAsync(x => x.Id == dto.Id);
+
+            if (vehicle == null)
             {
-                Id = dto.Id,
-                DoorNumber = dto.DoorNumber,
-                VehicleStatusId = dto.VehicleStatusId
-            };
+                throw new KeyNotFoundException("Güncellenecek araç bulunamadı.");
+            }
+
+            vehicle.DoorNumber = dto.DoorNumber;
+            vehicle.VehicleStatusId = dto.VehicleStatusId;
 
             _vehicleDal.Update(vehicle);
-
-            return Task.CompletedTask;
         }
 
         public async Task<bool> DeleteAsync(int id)
