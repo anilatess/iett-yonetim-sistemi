@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\IETT.Business\IETT.Business.csproj" />
     <ProjectReference Include="..\IETT.DataAccess\IETT.DataAccess.csproj" />
+    <ProjectReference Include="..\IETT.Entity\IETT.Entity.csproj" />
   </ItemGroup>
 
 </Project>
