@@ -13,6 +13,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [vehicles, setVehicles] = useState([]);
+  const [vehicleStatuses, setVehicleStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [message, setMessage] = useState("");
@@ -40,8 +41,31 @@ function App() {
     }
   }
 
+  async function fetchVehicleStatuses() {
+    try {
+      const response = await fetch(
+        "https://localhost:7034/api/VehicleStatuses",
+      );
+
+      if (!response.ok) {
+        throw new Error("Araç durumları getirilemedi.");
+      }
+
+      const data = await response.json();
+      setVehicleStatuses(data);
+    } catch (error) {
+      console.error(
+        "Araç durumları alınırken hata oluştu:",
+        error,
+      );
+
+      setMessage("Araç durumları getirilemedi.");
+    }
+  }
+
   useEffect(() => {
     loadVehicles();
+    fetchVehicleStatuses();
   }, []);
 
   function openCreateModal() {
@@ -50,7 +74,10 @@ function App() {
 
     setFormData({
       doorNumber: "",
-      vehicleStatusId: 1,
+      vehicleStatusId:
+        vehicleStatuses.length > 0
+          ? Number(vehicleStatuses[0].id)
+          : 1,
     });
 
     setModalOpen(true);
@@ -62,7 +89,7 @@ function App() {
 
     setFormData({
       doorNumber: vehicle.doorNumber,
-      vehicleStatusId: vehicle.vehicleStatusId,
+      vehicleStatusId: Number(vehicle.vehicleStatusId),
     });
 
     setModalOpen(true);
@@ -79,7 +106,10 @@ function App() {
 
     setFormData((current) => ({
       ...current,
-      [name]: name === "vehicleStatusId" ? Number(value) : value,
+      [name]:
+        name === "vehicleStatusId"
+          ? Number(value)
+          : value,
     }));
   }
 
@@ -88,6 +118,11 @@ function App() {
 
     if (!formData.doorNumber.trim()) {
       setModalError("Kapı numarası boş bırakılamaz.");
+      return;
+    }
+
+    if (!formData.vehicleStatusId) {
+      setModalError("Araç durumu seçilmelidir.");
       return;
     }
 
@@ -133,8 +168,44 @@ function App() {
     }
   }
 
+  async function handleQuickStatusChange(vehicle, newStatusId) {
+    const previousVehicles = vehicles;
+
+    try {
+      setMessage("");
+
+      setVehicles((currentVehicles) =>
+        currentVehicles.map((item) =>
+          item.id === vehicle.id
+            ? {
+                ...item,
+                vehicleStatusId: Number(newStatusId),
+              }
+            : item,
+        ),
+      );
+
+      await updateVehicle({
+        id: vehicle.id,
+        doorNumber: vehicle.doorNumber,
+        vehicleStatusId: Number(newStatusId),
+      });
+    } catch (error) {
+      setVehicles(previousVehicles);
+
+      setMessage(
+        error.message ||
+          "Araç durumu değiştirilirken hata oluştu.",
+      );
+    }
+  }
+
   return (
-    <div className={`admin-layout ${sidebarOpen ? "" : "sidebar-closed"}`}>
+    <div
+      className={`admin-layout ${
+        sidebarOpen ? "" : "sidebar-closed"
+      }`}
+    >
       <aside className="sidebar">
         <div className="sidebar-logo">
           <img src={iettLogo} alt="İETT Logo" />
@@ -143,7 +214,10 @@ function App() {
         </div>
 
         <nav>
-          <button type="button" className="menu-item active">
+          <button
+            type="button"
+            className="menu-item active"
+          >
             <span className="menu-icon">🚌</span>
             {sidebarOpen && <span>Araçlar</span>}
           </button>
@@ -174,7 +248,9 @@ function App() {
         <button
           type="button"
           className="sidebar-toggle"
-          onClick={() => setSidebarOpen((current) => !current)}
+          onClick={() =>
+            setSidebarOpen((current) => !current)
+          }
         >
           {sidebarOpen ? "←" : "→"}
         </button>
@@ -182,7 +258,10 @@ function App() {
         <div className="page-header">
           <div>
             <h1>Araç Yönetimi</h1>
-            <p>Veritabanında kayıtlı araçları yönetebilirsiniz.</p>
+            <p>
+              Veritabanında kayıtlı araçları
+              yönetebilirsiniz.
+            </p>
           </div>
 
           <button
@@ -194,20 +273,26 @@ function App() {
           </button>
         </div>
 
-        {message && <div className="alert-message">{message}</div>}
+        {message && (
+          <div className="alert-message">{message}</div>
+        )}
 
         <div className="table-card">
           {loading ? (
-            <div className="table-state">Araçlar yükleniyor...</div>
+            <div className="table-state">
+              Araçlar yükleniyor...
+            </div>
           ) : vehicles.length === 0 ? (
-            <div className="table-state">Kayıtlı araç bulunamadı.</div>
+            <div className="table-state">
+              Kayıtlı araç bulunamadı.
+            </div>
           ) : (
             <table>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Kapı Numarası</th>
-                  <th>Durum ID</th>
+                  <th>Durum</th>
                   <th>İşlemler</th>
                 </tr>
               </thead>
@@ -216,19 +301,47 @@ function App() {
                 {vehicles.map((vehicle) => (
                   <tr key={vehicle.id}>
                     <td>{vehicle.id}</td>
+
                     <td>{vehicle.doorNumber}</td>
 
                     <td>
-                      <span className="status-badge">
-                        {vehicle.vehicleStatusId}
-                      </span>
+                      <select
+                        className="status-select"
+                        value={vehicle.vehicleStatusId}
+                        onChange={(event) =>
+                          handleQuickStatusChange(
+                            vehicle,
+                            Number(event.target.value),
+                          )
+                        }
+                        disabled={
+                          vehicleStatuses.length === 0
+                        }
+                      >
+                        {vehicleStatuses.length === 0 ? (
+                          <option value="">
+                            Yükleniyor...
+                          </option>
+                        ) : (
+                          vehicleStatuses.map((status) => (
+                            <option
+                              key={status.id}
+                              value={status.id}
+                            >
+                              {status.name}
+                            </option>
+                          ))
+                        )}
+                      </select>
                     </td>
 
                     <td>
                       <button
                         type="button"
                         className="edit-button"
-                        onClick={() => openEditModal(vehicle)}
+                        onClick={() =>
+                          openEditModal(vehicle)
+                        }
                       >
                         Düzenle
                       </button>
@@ -236,7 +349,9 @@ function App() {
                       <button
                         type="button"
                         className="delete-button"
-                        onClick={() => handleDelete(vehicle)}
+                        onClick={() =>
+                          handleDelete(vehicle)
+                        }
                       >
                         Sil
                       </button>
@@ -250,14 +365,24 @@ function App() {
       </main>
 
       {modalOpen && (
-        <div className="modal-backdrop" onMouseDown={closeModal}>
+        <div
+          className="modal-backdrop"
+          onMouseDown={closeModal}
+        >
           <div
             className="modal-card"
-            onMouseDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
           >
             <div className="modal-header">
               <div>
-                <h2>{editingVehicle ? "Aracı Düzenle" : "Yeni Araç Ekle"}</h2>
+                <h2>
+                  {editingVehicle
+                    ? "Aracı Düzenle"
+                    : "Yeni Araç Ekle"}
+                </h2>
+
                 <p>Araç bilgilerini doldurun.</p>
               </div>
 
@@ -278,7 +403,9 @@ function App() {
 
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label htmlFor="doorNumber">Kapı Numarası</label>
+                <label htmlFor="doorNumber">
+                  Kapı Numarası
+                </label>
 
                 <input
                   id="doorNumber"
@@ -292,18 +419,33 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="vehicleStatusId">Araç Durumu</label>
+                <label htmlFor="vehicleStatusId">
+                  Araç Durumu
+                </label>
 
                 <select
                   id="vehicleStatusId"
                   name="vehicleStatusId"
                   value={formData.vehicleStatusId}
                   onChange={handleInputChange}
+                  disabled={
+                    vehicleStatuses.length === 0
+                  }
                 >
-                  <option value={1}>1 - Aktif</option>
-                  <option value={2}>2 - Bakımda</option>
-                  <option value={3}>3 - Servis Dışı</option>
-                  <option value={4}>4 - Arızalı</option>
+                  {vehicleStatuses.length === 0 ? (
+                    <option value="">
+                      Durumlar yükleniyor...
+                    </option>
+                  ) : (
+                    vehicleStatuses.map((status) => (
+                      <option
+                        key={status.id}
+                        value={status.id}
+                      >
+                        {status.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -316,7 +458,13 @@ function App() {
                   Vazgeç
                 </button>
 
-                <button type="submit" className="save-button">
+                <button
+                  type="submit"
+                  className="save-button"
+                  disabled={
+                    vehicleStatuses.length === 0
+                  }
+                >
                   {editingVehicle
                     ? "Değişiklikleri Kaydet"
                     : "Aracı Kaydet"}
