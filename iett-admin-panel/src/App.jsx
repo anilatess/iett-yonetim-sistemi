@@ -9,12 +9,20 @@ import {
   updateVehicle,
 } from "./services/vehicleService";
 
+const API_BASE_URL = "https://localhost:7034/api";
+
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activePage, setActivePage] = useState("vehicles");
 
   const [vehicles, setVehicles] = useState([]);
   const [vehicleStatuses, setVehicleStatuses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
+
+  const [drivers, setDrivers] = useState([]);
+  const [driversLoading, setDriversLoading] = useState(false);
+  const [driversLoaded, setDriversLoaded] = useState(false);
+  const [driverSearch, setDriverSearch] = useState("");
 
   const [message, setMessage] = useState("");
   const [modalError, setModalError] = useState("");
@@ -29,22 +37,22 @@ function App() {
 
   async function loadVehicles() {
     try {
-      setLoading(true);
+      setVehiclesLoading(true);
       setMessage("");
 
       const data = await getVehicles();
       setVehicles(data);
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error.message || "Araçlar getirilemedi.");
     } finally {
-      setLoading(false);
+      setVehiclesLoading(false);
     }
   }
 
-  async function fetchVehicleStatuses() {
+  async function loadVehicleStatuses() {
     try {
       const response = await fetch(
-        "https://localhost:7034/api/VehicleStatuses",
+        `${API_BASE_URL}/VehicleStatuses`,
       );
 
       if (!response.ok) {
@@ -59,14 +67,44 @@ function App() {
         error,
       );
 
-      setMessage("Araç durumları getirilemedi.");
+      setMessage(
+        error.message || "Araç durumları getirilemedi.",
+      );
+    }
+  }
+
+  async function loadDrivers() {
+    try {
+      setDriversLoading(true);
+      setMessage("");
+
+      const response = await fetch(`${API_BASE_URL}/Drivers`);
+
+      if (!response.ok) {
+        throw new Error("Şoförler getirilemedi.");
+      }
+
+      const data = await response.json();
+
+      setDrivers(data);
+      setDriversLoaded(true);
+    } catch (error) {
+      setMessage(error.message || "Şoförler getirilemedi.");
+    } finally {
+      setDriversLoading(false);
     }
   }
 
   useEffect(() => {
     loadVehicles();
-    fetchVehicleStatuses();
+    loadVehicleStatuses();
   }, []);
+
+  useEffect(() => {
+    if (activePage === "drivers" && !driversLoaded) {
+      loadDrivers();
+    }
+  }, [activePage, driversLoaded]);
 
   function openCreateModal() {
     setModalError("");
@@ -145,7 +183,9 @@ function App() {
       closeModal();
       await loadVehicles();
     } catch (error) {
-      setModalError(error.message);
+      setModalError(
+        error.message || "Araç kaydedilirken hata oluştu.",
+      );
     }
   }
 
@@ -164,11 +204,16 @@ function App() {
       await deleteVehicle(vehicle.id);
       await loadVehicles();
     } catch (error) {
-      setMessage(error.message);
+      setMessage(
+        error.message || "Araç silinirken hata oluştu.",
+      );
     }
   }
 
-  async function handleQuickStatusChange(vehicle, newStatusId) {
+  async function handleQuickStatusChange(
+    vehicle,
+    newStatusId,
+  ) {
     const previousVehicles = vehicles;
 
     try {
@@ -200,61 +245,34 @@ function App() {
     }
   }
 
-  return (
-    <div
-      className={`admin-layout ${
-        sidebarOpen ? "" : "sidebar-closed"
-      }`}
-    >
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <img src={iettLogo} alt="İETT Logo" />
+  const filteredDrivers = drivers.filter((driver) => {
+    const searchValue = driverSearch
+      .trim()
+      .toLocaleLowerCase("tr-TR");
 
-          {sidebarOpen && <span>İETT Admin</span>}
-        </div>
+    if (!searchValue) {
+      return true;
+    }
 
-        <nav>
-          <button
-            type="button"
-            className="menu-item active"
-          >
-            <span className="menu-icon">🚌</span>
-            {sidebarOpen && <span>Araçlar</span>}
-          </button>
+    return [
+      driver.id,
+      driver.fullName,
+      driver.maskedIdentityNumber,
+      driver.personnelNumber,
+      driver.garageName,
+      driver.operatorName,
+      driver.driverStatusName,
+      driver.holidayDay,
+    ].some((value) =>
+      String(value ?? "")
+        .toLocaleLowerCase("tr-TR")
+        .includes(searchValue),
+    );
+  });
 
-          <button type="button" className="menu-item">
-            <span className="menu-icon">👤</span>
-            {sidebarOpen && <span>Şoförler</span>}
-          </button>
-
-          <button type="button" className="menu-item">
-            <span className="menu-icon">🛣️</span>
-            {sidebarOpen && <span>Hatlar</span>}
-          </button>
-
-          <button type="button" className="menu-item">
-            <span className="menu-icon">📍</span>
-            {sidebarOpen && <span>Duraklar</span>}
-          </button>
-
-          <button type="button" className="menu-item">
-            <span className="menu-icon">📋</span>
-            {sidebarOpen && <span>Şikâyetler</span>}
-          </button>
-        </nav>
-      </aside>
-
-      <main className="content">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={() =>
-            setSidebarOpen((current) => !current)
-          }
-        >
-          {sidebarOpen ? "←" : "→"}
-        </button>
-
+  function renderVehiclesPage() {
+    return (
+      <>
         <div className="page-header">
           <div>
             <h1>Araç Yönetimi</h1>
@@ -273,12 +291,8 @@ function App() {
           </button>
         </div>
 
-        {message && (
-          <div className="alert-message">{message}</div>
-        )}
-
         <div className="table-card">
-          {loading ? (
+          {vehiclesLoading ? (
             <div className="table-state">
               Araçlar yükleniyor...
             </div>
@@ -362,6 +376,201 @@ function App() {
             </table>
           )}
         </div>
+      </>
+    );
+  }
+
+  function renderDriversPage() {
+    return (
+      <>
+        <div className="page-header">
+          <div>
+            <h1>Şoförler</h1>
+            <p>
+              Sistemde kayıtlı şoför bilgilerini
+              görüntüleyebilirsiniz.
+            </p>
+          </div>
+
+          <div className="driver-count">
+            Toplam {drivers.length} şoför
+          </div>
+        </div>
+
+        <div className="drivers-toolbar">
+          <input
+            type="text"
+            className="driver-search"
+            value={driverSearch}
+            onChange={(event) =>
+              setDriverSearch(event.target.value)
+            }
+            placeholder="Şoför, personel no veya garaj ara..."
+          />
+
+          <button
+            type="button"
+            className="refresh-button"
+            onClick={loadDrivers}
+            disabled={driversLoading}
+          >
+            {driversLoading ? "Yenileniyor..." : "Listeyi Yenile"}
+          </button>
+        </div>
+
+        <div className="table-card">
+          {driversLoading ? (
+            <div className="table-state">
+              Şoförler yükleniyor...
+            </div>
+          ) : filteredDrivers.length === 0 ? (
+            <div className="table-state">
+              {drivers.length === 0
+                ? "Kayıtlı şoför bulunamadı."
+                : "Arama sonucuna uygun şoför bulunamadı."}
+            </div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Ad Soyad</th>
+                  <th>TC Kimlik No</th>
+                  <th>Personel No</th>
+                  <th>Garaj</th>
+                  <th>Operatör</th>
+                  <th>Durum</th>
+                  <th>Tatil Günü</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredDrivers.map((driver) => (
+                  <tr key={driver.id}>
+                    <td>{driver.id}</td>
+
+                    <td>
+                      <div className="driver-name-cell">
+                        <div className="driver-avatar">
+                          {driver.fullName
+                            ?.charAt(0)
+                            .toLocaleUpperCase("tr-TR")}
+                        </div>
+
+                        <span>{driver.fullName}</span>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className="identity-number">
+                        {driver.maskedIdentityNumber}
+                      </span>
+                    </td>
+
+                    <td>{driver.personnelNumber}</td>
+
+                    <td>{driver.garageName}</td>
+
+                    <td>
+                      <span className="operator-badge">
+                        {driver.operatorName}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span className="driver-status-badge">
+                        {driver.driverStatusName}
+                      </span>
+                    </td>
+
+                    <td>{driver.holidayDay}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div
+      className={`admin-layout ${
+        sidebarOpen ? "" : "sidebar-closed"
+      }`}
+    >
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <img src={iettLogo} alt="İETT Logo" />
+
+          {sidebarOpen && <span>İETT Admin</span>}
+        </div>
+
+        <nav>
+          <button
+            type="button"
+            className={`menu-item ${
+              activePage === "vehicles" ? "active" : ""
+            }`}
+            onClick={() => {
+              setActivePage("vehicles");
+              setMessage("");
+            }}
+          >
+            <span className="menu-icon">🚌</span>
+            {sidebarOpen && <span>Araçlar</span>}
+          </button>
+
+          <button
+            type="button"
+            className={`menu-item ${
+              activePage === "drivers" ? "active" : ""
+            }`}
+            onClick={() => {
+              setActivePage("drivers");
+              setMessage("");
+            }}
+          >
+            <span className="menu-icon">👤</span>
+            {sidebarOpen && <span>Şoförler</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">🛣️</span>
+            {sidebarOpen && <span>Hatlar</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">📍</span>
+            {sidebarOpen && <span>Duraklar</span>}
+          </button>
+
+          <button type="button" className="menu-item">
+            <span className="menu-icon">📋</span>
+            {sidebarOpen && <span>Şikâyetler</span>}
+          </button>
+        </nav>
+      </aside>
+
+      <main className="content">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={() =>
+            setSidebarOpen((current) => !current)
+          }
+        >
+          {sidebarOpen ? "←" : "→"}
+        </button>
+
+        {message && (
+          <div className="alert-message">{message}</div>
+        )}
+
+        {activePage === "vehicles"
+          ? renderVehiclesPage()
+          : renderDriversPage()}
       </main>
 
       {modalOpen && (
