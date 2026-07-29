@@ -37,10 +37,17 @@ function Sidebar({
           {sidebarOpen && <span>Şoförler</span>}
         </button>
 
-        <button type="button" className="menu-item">
-          <span className="menu-icon">🛣️</span>
-          {sidebarOpen && <span>Hatlar</span>}
-        </button>
+      <button
+  type="button"
+  className={`menu-item ${
+    activePage === "busRoutes" ? "active" : ""
+  }`}
+  onClick={() => setActivePage("busRoutes")}
+>
+  <span className="menu-icon">🛣️</span>
+
+  {sidebarOpen && <span>Hatlar</span>}
+</button>
 
         <button type="button" className="menu-item">
           <span className="menu-icon">📍</span>

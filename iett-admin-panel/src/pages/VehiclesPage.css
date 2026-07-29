@@ -222,3 +222,18 @@
     min-width: 650px;
   }
 }
+
+.route-link {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.route-link:hover {
+  color: #1d4ed8;
+}

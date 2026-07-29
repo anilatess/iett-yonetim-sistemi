@@ -4,22 +4,35 @@ using IETT.DataAccess.Abstract;
 using IETT.DataAccess.Concrete;
 using IETT.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.ReferenceHandler =
-            ReferenceHandler.IgnoreCycles;
-    });
+// Controller servisleri
+builder.Services.AddControllers();
 
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Veritabaný baðlantýsý
+builder.Services.AddDbContext<IETTDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    )
+);
+
+// Araç servisleri
+builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
+builder.Services.AddScoped<IVehicleService, VehicleManager>();
+
+// Hat servisleri
+builder.Services.AddScoped<IBusRouteDal, EfBusRouteDal>();
+builder.Services.AddScoped<IBusRouteService, BusRouteManager>();
+
+// React uygulamasýnýn API'ye eriþebilmesi için
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("ReactPolicy", policy =>
+    options.AddPolicy("AllowReactApp", policy =>
     {
         policy
             .WithOrigins("http://localhost:5173")
@@ -28,15 +41,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<IETTDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
-builder.Services.AddScoped<IVehicleService, VehicleManager>();
-
 var app = builder.Build();
 
+// Swagger
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -45,7 +52,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("ReactPolicy");
+// CORS, Authorization'dan önce çalýþmalý
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
 
