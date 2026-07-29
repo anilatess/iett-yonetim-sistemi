@@ -7,7 +7,15 @@ import VehiclesPage from "./pages/VehiclesPage";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activePage, setActivePage] = useState("vehicles");
+
+  const [activePage, setActivePage] = useState(() => {
+    return localStorage.getItem("activePage") || "vehicles";
+  });
+
+  function handlePageChange(page) {
+    setActivePage(page);
+    localStorage.setItem("activePage", page);
+  }
 
   return (
     <div
@@ -18,7 +26,7 @@ function App() {
       <Sidebar
         sidebarOpen={sidebarOpen}
         activePage={activePage}
-        setActivePage={setActivePage}
+        setActivePage={handlePageChange}
       />
 
       <main className="content">

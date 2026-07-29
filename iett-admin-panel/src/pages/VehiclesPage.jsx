@@ -167,40 +167,58 @@ function VehiclesPage() {
     }
   }
 
-  async function handleQuickStatusChange(
-    vehicle,
-    newStatusId,
-  ) {
-    const previousVehicles = vehicles;
+  async function handleQuickStatusChange(vehicle, newStatusId) {
+  const numericStatusId = Number(newStatusId);
 
-    try {
-      setMessage("");
-
-      setVehicles((currentVehicles) =>
-        currentVehicles.map((item) =>
-          item.id === vehicle.id
-            ? {
-                ...item,
-                vehicleStatusId: Number(newStatusId),
-              }
-            : item,
-        ),
-      );
-
-      await updateVehicle({
-        id: vehicle.id,
-        doorNumber: vehicle.doorNumber,
-        vehicleStatusId: Number(newStatusId),
-      });
-    } catch (error) {
-      setVehicles(previousVehicles);
-
-      setMessage(
-        error.message ||
-          "Araç durumu değiştirilirken hata oluştu.",
-      );
-    }
+  // Kullanıcı mevcut durumu tekrar seçtiyse işlem yapma
+  if (numericStatusId === Number(vehicle.vehicleStatusId)) {
+    return;
   }
+
+  const selectedStatus = vehicleStatuses.find(
+    (status) => Number(status.id) === numericStatusId,
+  );
+
+  const confirmed = window.confirm(
+    `${vehicle.doorNumber} numaralı aracın durumunu ` +
+      `"${selectedStatus?.name || "seçilen durum"}" olarak değiştirmek istediğine emin misin?`,
+  );
+
+  // Vazgeçilirse select, vehicles state değişmediği için eski durumuna döner
+  if (!confirmed) {
+    return;
+  }
+
+  const previousVehicles = vehicles;
+
+  try {
+    setMessage("");
+
+    setVehicles((currentVehicles) =>
+      currentVehicles.map((item) =>
+        item.id === vehicle.id
+          ? {
+              ...item,
+              vehicleStatusId: numericStatusId,
+            }
+          : item,
+      ),
+    );
+
+    await updateVehicle({
+      id: vehicle.id,
+      doorNumber: vehicle.doorNumber,
+      vehicleStatusId: numericStatusId,
+    });
+  } catch (error) {
+    setVehicles(previousVehicles);
+
+    setMessage(
+      error.message ||
+        "Araç durumu değiştirilirken hata oluştu.",
+    );
+  }
+}
 
   return (
     <div className="vehicles-page">
