@@ -1,5 +1,6 @@
 ﻿using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Vehicle;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<ActionResult<List<VehicleStatusDto>>> GetAll()
         {
             var statuses = await _context.VehicleStatuses

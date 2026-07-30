@@ -1,24 +1,6 @@
 import "./Sidebar.css";
 import iettLogo from "../../assets/iett-logo.png";
-
-const menusByRole = {
-  Admin: [
-    ["adminDashboard", "🏠", "Dashboard"],
-    ["vehicles", "🚌", "Araçlar"],
-    ["drivers", "👤", "Şoförler"],
-    ["busRoutes", "🛣️", "Hatlar"],
-    ["busStops", "📍", "Duraklar"],
-  ],
-  Driver: [
-    ["driverDashboard", "🏠", "Dashboard"],
-    ["driverTasks", "📋", "Görevlerim"],
-  ],
-  Inspector: [
-    ["inspectorDashboard", "🏠", "Dashboard"],
-    ["inspectorTasks", "📋", "Görevlerim"],
-    ["drivers", "👤", "Şoförler"],
-  ],
-};
+import { getRoleNavigation } from "../../config/navigationConfig";
 
 function Sidebar({
   sidebarOpen,
@@ -27,14 +9,15 @@ function Sidebar({
   currentUser,
   onLogout,
 }) {
-  const menuItems = menusByRole[currentUser?.role] || [];
+  const navigation = getRoleNavigation(currentUser?.role);
+  const menuItems = navigation?.menuItems || [];
 
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
         <img src={iettLogo} alt="İETT Logo" />
 
-        {sidebarOpen && <span>İETT Panel</span>}
+        {sidebarOpen && <span>{navigation?.title || "İETT Panel"}</span>}
       </div>
 
       <nav className="sidebar-menu">

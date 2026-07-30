@@ -33,9 +33,9 @@
 
 .sidebar-logo span {
   color: white;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
-  white-space: nowrap;
+  line-height: 1.3;
 }
 
 .sidebar nav {
@@ -146,6 +146,8 @@
 
 .sidebar-menu {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sidebar-user {

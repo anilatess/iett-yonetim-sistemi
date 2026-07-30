@@ -1,5 +1,6 @@
 ﻿using IETT.Business.Abstract;
 using IETT.Entity.DTOs.Vehicles;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,7 @@ namespace IETT.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class VehiclesController : ControllerBase
     {
         private readonly IVehicleService _vehicleService;
@@ -17,6 +19,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> GetAll()
         {
             var vehicles = await _vehicleService.GetAllAsync();
@@ -25,6 +28,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> GetById(int id)
         {
             var vehicle = await _vehicleService.GetByIdAsync(id);
@@ -41,6 +45,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Add(CreateVehicleDto dto)
         {
             try
@@ -62,6 +67,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(UpdateVehicleDto dto)
         {
             try
@@ -87,6 +93,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _vehicleService.DeleteAsync(id);

@@ -10,137 +10,172 @@ import BusStopsPage from "./pages/BusStopsPage";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import DriverDashboard from "./pages/dashboards/DriverDashboard";
 import InspectorDashboard from "./pages/dashboards/InspectorDashboard";
+import TripsPage from "./pages/TripsPage";
+import TaskAssignmentPage from "./pages/TaskAssignmentPage";
+import ComplaintsPage from "./pages/ComplaintsPage";
+import InspectionsPage from "./pages/InspectionsPage";
+import UsersPage from "./pages/UsersPage";
+import InspectorTasksPage from "./pages/InspectorTasksPage";
+import InspectorComplaintsPage from "./pages/InspectorComplaintsPage";
+import PerformanceEvaluationPage from "./pages/PerformanceEvaluationPage";
+import InvestigationHistoryPage from "./pages/InvestigationHistoryPage";
+import ProfilePage from "./pages/ProfilePage";
+import DriverTasksPage from "./pages/DriverTasksPage";
+import DriverTripsPage from "./pages/DriverTripsPage";
+import DriverCertificatesPage from "./pages/DriverCertificatesPage";
+import DriverPerformancePage from "./pages/DriverPerformancePage";
+import {
+  getStartPage,
+  isPageAllowed,
+} from "./config/navigationConfig";
 
-const rolePages = {
-  Admin: ["adminDashboard", "vehicles", "drivers", "busRoutes", "busStops"],
-  Driver: ["driverDashboard", "driverTasks"],
-  Inspector: ["inspectorDashboard", "inspectorTasks", "drivers"],
-};
+function restoreCurrentUser() {
+  const savedUser = localStorage.getItem("currentUser");
 
-const roleStartPages = {
-  Admin: "adminDashboard",
-  Driver: "driverDashboard",
-  Inspector: "inspectorDashboard",
-};
+  if (!savedUser) {
+    return null;
+  }
 
-function getStartPage(role) {
-  return roleStartPages[role] || "adminDashboard";
+  try {
+    return JSON.parse(savedUser);
+  } catch {
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("token");
+    return null;
+  }
+}
+
+function restoreSelectedRoute() {
+  const savedRoute = localStorage.getItem("selectedRoute");
+
+  if (!savedRoute) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(savedRoute);
+  } catch {
+    localStorage.removeItem("selectedRoute");
+    return null;
+  }
 }
 
 function App() {
-  // Kullanıcı bilgilerini localStorage üzerinden geri yükler.
-  // Böylece sayfa yenilendiğinde oturum kapanmaz.
-  const [currentUser, setCurrentUser] = useState(() => {
-    const savedUser = localStorage.getItem("currentUser");
-
-    if (!savedUser) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(savedUser);
-    } catch {
-      localStorage.removeItem("currentUser");
-      localStorage.removeItem("token");
-      return null;
-    }
-  });
-
-  // Sidebar açık veya kapalı durumu
+  const [currentUser, setCurrentUser] = useState(restoreCurrentUser);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // Son açık olan sayfayı localStorage üzerinden hatırlar
   const [activePage, setActivePage] = useState(() => {
+    const user = restoreCurrentUser();
     const savedPage = localStorage.getItem("activePage");
-    const allowedPages = rolePages[currentUser?.role] || [];
 
-    return allowedPages.includes(savedPage)
+    return isPageAllowed(user?.role, savedPage)
       ? savedPage
-      : getStartPage(currentUser?.role);
+      : getStartPage(user?.role);
   });
+  const [selectedRoute, setSelectedRoute] = useState(restoreSelectedRoute);
 
-  // Seçilen hat bilgisini sayfa yenilense bile korur
-  const [selectedRoute, setSelectedRoute] = useState(() => {
-    const savedRoute = localStorage.getItem("selectedRoute");
-
-    if (!savedRoute) {
-      return null;
-    }
-
-    try {
-      return JSON.parse(savedRoute);
-    } catch {
-      localStorage.removeItem("selectedRoute");
-      return null;
-    }
-  });
-
-  // Giriş başarılı olduğunda kullanıcı ve token bilgilerini saklar
   function handleLogin(userData) {
     const startPage = getStartPage(userData.role);
 
     setCurrentUser(userData);
     setActivePage(startPage);
-
-    localStorage.setItem(
-      "currentUser",
-      JSON.stringify(userData),
-    );
-
+    localStorage.setItem("currentUser", JSON.stringify(userData));
     localStorage.setItem("token", userData.token);
     localStorage.setItem("activePage", startPage);
   }
 
-  // Kullanıcı çıkış yaptığında oturum bilgilerini temizler
   function handleLogout() {
     setCurrentUser(null);
     setActivePage("adminDashboard");
     setSelectedRoute(null);
-
     localStorage.removeItem("currentUser");
     localStorage.removeItem("token");
     localStorage.removeItem("activePage");
     localStorage.removeItem("selectedRoute");
   }
 
-  // Sidebar üzerinden sayfa değiştirildiğinde çalışır
-  function handlePageChange(page) {
-    setActivePage(page);
-    localStorage.setItem("activePage", page);
+  function handlePageChange(requestedPage) {
+    const nextPage = isPageAllowed(currentUser?.role, requestedPage)
+      ? requestedPage
+      : getStartPage(currentUser?.role);
+
+    setActivePage(nextPage);
+    localStorage.setItem("activePage", nextPage);
   }
 
-  // Hat seçildiğinde duraklar sayfasına geçer
   function handleSelectRoute(route) {
     setSelectedRoute(route);
-
-    localStorage.setItem(
-      "selectedRoute",
-      JSON.stringify(route),
-    );
-
+    localStorage.setItem("selectedRoute", JSON.stringify(route));
     handlePageChange("busStops");
   }
 
-  // Duraklar sayfasından hatlar sayfasına döner
   function handleBackToRoutes() {
     handlePageChange("busRoutes");
   }
 
-  // Kullanıcı giriş yapmadıysa giriş ekranını göster
+  function renderPage(page) {
+    const canEdit = currentUser?.role === "Admin";
+
+    switch (page) {
+      case "adminDashboard":
+        return <AdminDashboard currentUser={currentUser} onNavigate={handlePageChange} />;
+      case "inspectorDashboard":
+        return <InspectorDashboard currentUser={currentUser} onNavigate={handlePageChange} />;
+      case "driverDashboard":
+        return <DriverDashboard currentUser={currentUser} onNavigate={handlePageChange} />;
+      case "vehicles":
+        return <VehiclesPage canEdit={canEdit} />;
+      case "drivers":
+        return <DriversPage />;
+      case "busRoutes":
+        return <BusRoutesPage canEdit={canEdit} onSelectRoute={handleSelectRoute} />;
+      case "busStops":
+        return <BusStopsPage selectedRoute={selectedRoute} onBack={handleBackToRoutes} />;
+      case "trips":
+        return <TripsPage />;
+      case "taskAssignment":
+        return <TaskAssignmentPage />;
+      case "complaints":
+        return <ComplaintsPage />;
+      case "inspections":
+        return <InspectionsPage />;
+      case "users":
+        return <UsersPage />;
+      case "inspectorTasks":
+        return <InspectorTasksPage />;
+      case "inspectorComplaints":
+        return <InspectorComplaintsPage />;
+      case "performanceEvaluation":
+        return <PerformanceEvaluationPage />;
+      case "investigationHistory":
+        return <InvestigationHistoryPage />;
+      case "driverTasks":
+        return <DriverTasksPage />;
+      case "driverTrips":
+        return <DriverTripsPage />;
+      case "driverCertificates":
+        return <DriverCertificatesPage />;
+      case "driverPerformance":
+        return <DriverPerformancePage />;
+      case "profile":
+        return <ProfilePage role={currentUser?.role} />;
+      default:
+        return null;
+    }
+  }
+
   if (!currentUser) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  // Kullanıcı giriş yaptıysa mevcut yönetim panelini göster
+  const safeActivePage = isPageAllowed(currentUser.role, activePage)
+    ? activePage
+    : getStartPage(currentUser.role);
+
   return (
-    <div
-      className={`admin-layout ${
-        sidebarOpen ? "" : "sidebar-closed"
-      }`}
-    >
+    <div className={`admin-layout ${sidebarOpen ? "" : "sidebar-closed"}`}>
       <Sidebar
         sidebarOpen={sidebarOpen}
-        activePage={activePage}
+        activePage={safeActivePage}
         setActivePage={handlePageChange}
         currentUser={currentUser}
         onLogout={handleLogout}
@@ -150,60 +185,12 @@ function App() {
         <button
           type="button"
           className="sidebar-toggle"
-          onClick={() =>
-            setSidebarOpen((current) => !current)
-          }
+          onClick={() => setSidebarOpen((current) => !current)}
         >
           {sidebarOpen ? "←" : "→"}
         </button>
 
-        {activePage === "vehicles" && (
-          <VehiclesPage />
-        )}
-
-        {activePage === "adminDashboard" && (
-          <AdminDashboard
-            currentUser={currentUser}
-            onNavigate={handlePageChange}
-          />
-        )}
-
-        {activePage === "driverDashboard" && (
-          <DriverDashboard currentUser={currentUser} />
-        )}
-
-        {activePage === "inspectorDashboard" && (
-          <InspectorDashboard currentUser={currentUser} />
-        )}
-
-        {(activePage === "driverTasks" ||
-          activePage === "inspectorTasks") && (
-          <section>
-            <header className="page-header">
-              <div>
-                <h1>Görevlerim</h1>
-                <p>Görevleriniz ileride bu ekranda gösterilecek.</p>
-              </div>
-            </header>
-          </section>
-        )}
-
-        {activePage === "drivers" && (
-          <DriversPage />
-        )}
-
-        {activePage === "busRoutes" && (
-          <BusRoutesPage
-            onSelectRoute={handleSelectRoute}
-          />
-        )}
-
-        {activePage === "busStops" && (
-          <BusStopsPage
-            selectedRoute={selectedRoute}
-            onBack={handleBackToRoutes}
-          />
-        )}
+        {renderPage(safeActivePage)}
       </main>
     </div>
   );

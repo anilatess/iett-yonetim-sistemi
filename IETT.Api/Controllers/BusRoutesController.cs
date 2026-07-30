@@ -1,6 +1,7 @@
 ﻿using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.BusRouteDtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> GetAll()
         {
             var routes = await _busRouteService.GetAllAsync();
@@ -30,6 +32,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> GetById(int id)
         {
             var route = await _busRouteService.GetByIdAsync(id);
@@ -43,6 +46,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpGet("{routeId:int}/stops")]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> GetStopsByRouteId(
             int routeId)
         {
@@ -92,6 +96,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Add(
             CreateBusRouteDto dto)
         {
@@ -106,6 +111,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(
             UpdateBusRouteDto dto)
         {
@@ -122,6 +128,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted =

@@ -7,11 +7,12 @@ import {
   getVehicles,
   updateVehicle,
 } from "../services/vehicleService";
+import { apiFetch } from "../services/apiClient";
 
 const VEHICLE_STATUS_API_URL =
   "https://localhost:7034/api/VehicleStatuses";
 
-function VehiclesPage() {
+function VehiclesPage({ canEdit = true }) {
   const [vehicles, setVehicles] = useState([]);
   const [vehicleStatuses, setVehicleStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,13 +44,7 @@ function VehiclesPage() {
 
   async function loadVehicleStatuses() {
     try {
-      const response = await fetch(VEHICLE_STATUS_API_URL);
-
-      if (!response.ok) {
-        throw new Error("Araç durumları getirilemedi.");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch(VEHICLE_STATUS_API_URL);
       setVehicleStatuses(data);
     } catch (error) {
       setMessage(
@@ -224,20 +219,17 @@ function VehiclesPage() {
     <div className="vehicles-page">
       <div className="page-header">
         <div>
-          <h1>Araç Yönetimi</h1>
+          <h1>{canEdit ? "Araç Yönetimi" : "Araçlar"}</h1>
           <p>
-            Veritabanında kayıtlı araçları
-            yönetebilirsiniz.
+            Veritabanında kayıtlı araçları {canEdit ? "yönetebilirsiniz" : "görüntüleyebilirsiniz"}.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="add-button"
-          onClick={openCreateModal}
-        >
-          Yeni Araç
-        </button>
+        {canEdit && (
+          <button type="button" className="add-button" onClick={openCreateModal}>
+            Yeni Araç
+          </button>
+        )}
       </div>
 
       {message && (
@@ -260,7 +252,7 @@ function VehiclesPage() {
                 <th>ID</th>
                 <th>Kapı Numarası</th>
                 <th>Durum</th>
-                <th>İşlemler</th>
+                {canEdit && <th>İşlemler</th>}
               </tr>
             </thead>
 
@@ -271,37 +263,29 @@ function VehiclesPage() {
                   <td>{vehicle.doorNumber}</td>
 
                   <td>
-                    <select
-                      className="status-select"
-                      value={vehicle.vehicleStatusId}
-                      onChange={(event) =>
-                        handleQuickStatusChange(
-                          vehicle,
-                          Number(event.target.value),
-                        )
-                      }
-                      disabled={
-                        vehicleStatuses.length === 0
-                      }
-                    >
-                      {vehicleStatuses.length === 0 ? (
-                        <option value="">
-                          Yükleniyor...
-                        </option>
-                      ) : (
-                        vehicleStatuses.map((status) => (
-                          <option
-                            key={status.id}
-                            value={status.id}
-                          >
-                            {status.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
+                    {canEdit ? (
+                      <select
+                        className="status-select"
+                        value={vehicle.vehicleStatusId}
+                        onChange={(event) => handleQuickStatusChange(vehicle, Number(event.target.value))}
+                        disabled={vehicleStatuses.length === 0}
+                      >
+                        {vehicleStatuses.length === 0 ? (
+                          <option value="">Yükleniyor...</option>
+                        ) : (
+                          vehicleStatuses.map((status) => (
+                            <option key={status.id} value={status.id}>{status.name}</option>
+                          ))
+                        )}
+                      </select>
+                    ) : (
+                      <span className="status-badge">
+                        {vehicleStatuses.find((status) => Number(status.id) === Number(vehicle.vehicleStatusId))?.name || "-"}
+                      </span>
+                    )}
                   </td>
 
-                  <td>
+                  {canEdit && <td>
                     <button
                       type="button"
                       className="edit-button"
@@ -317,7 +301,7 @@ function VehiclesPage() {
                     >
                       Sil
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))}
             </tbody>
@@ -325,7 +309,7 @@ function VehiclesPage() {
         )}
       </div>
 
-      {modalOpen && (
+      {canEdit && modalOpen && (
         <div
           className="modal-backdrop"
           onMouseDown={closeModal}

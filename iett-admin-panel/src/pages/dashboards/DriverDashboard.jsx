@@ -1,12 +1,14 @@
 import "./Dashboard.css";
 
 const driverSections = [
-  ["📋", "Görevlerim", "Atanan görevleriniz burada gösterilecek."],
-  ["🚌", "Seferlerim", "Planlanan seferleriniz burada gösterilecek."],
-  ["📄", "Sertifikalarım", "Sertifika bilgileriniz burada gösterilecek."],
+  ["driverTasks", "📋", "Görevlerim", "Atanan görevleriniz burada gösterilecek."],
+  ["driverTrips", "🚌", "Seferlerim", "Planlanan seferleriniz burada gösterilecek."],
+  ["driverCertificates", "📄", "Sertifikalarım", "Sertifika bilgileriniz burada gösterilecek."],
+  ["driverPerformance", "📊", "Performansım", "Performans değerlendirmeleriniz burada gösterilecek."],
+  ["profile", "👤", "Profilim", "Kullanıcı ve personel bilgilerinizi görüntüleyin."],
 ];
 
-function DriverDashboard({ currentUser }) {
+function DriverDashboard({ currentUser, onNavigate }) {
   return (
     <section className="dashboard-page">
       <header className="page-header">
@@ -17,12 +19,12 @@ function DriverDashboard({ currentUser }) {
       </header>
 
       <div className="dashboard-grid">
-        {driverSections.map(([icon, title, description]) => (
-          <article className="dashboard-card" key={title}>
+        {driverSections.map(([page, icon, title, description]) => (
+          <button className="dashboard-card" key={page} type="button" onClick={() => onNavigate(page)}>
             <span className="dashboard-card-icon">{icon}</span>
             <h2>{title}</h2>
             <p>{description}</p>
-          </article>
+          </button>
         ))}
       </div>
     </section>

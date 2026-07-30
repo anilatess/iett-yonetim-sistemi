@@ -1,12 +1,16 @@
 import "./Dashboard.css";
 
 const inspectorSections = [
-  ["📋", "Görevlerim", "Atanan denetim görevleriniz burada gösterilecek."],
-  ["🔎", "Şikâyet İncelemeleri", "İncelenecek şikâyetler burada gösterilecek."],
-  ["📊", "Performans Değerlendirmeleri", "Şoför değerlendirmeleri burada gösterilecek."],
+  ["inspectorTasks", "📋", "Görevlerim", "Atanan denetim görevlerinizi görüntüleyin."],
+  ["inspectorComplaints", "🔎", "Şikâyet İncelemeleri", "İncelenecek şikâyetleri görüntüleyin."],
+  ["performanceEvaluation", "📊", "Performans Değerlendirme", "Şoför performanslarını değerlendirin."],
+  ["investigationHistory", "🕘", "İnceleme Geçmişim", "Tamamladığınız incelemeleri görüntüleyin."],
+  ["drivers", "👤", "Şoförler", "Şoför bilgilerini görüntüleyin."],
+  ["vehicles", "🚌", "Araçlar", "Araçları salt okunur görüntüleyin."],
+  ["busRoutes", "🛣️", "Hatlar", "Hatları ve duraklarını görüntüleyin."],
 ];
 
-function InspectorDashboard({ currentUser }) {
+function InspectorDashboard({ currentUser, onNavigate }) {
   return (
     <section className="dashboard-page">
       <header className="page-header">
@@ -17,12 +21,12 @@ function InspectorDashboard({ currentUser }) {
       </header>
 
       <div className="dashboard-grid">
-        {inspectorSections.map(([icon, title, description]) => (
-          <article className="dashboard-card" key={title}>
+        {inspectorSections.map(([page, icon, title, description]) => (
+          <button className="dashboard-card" key={page} type="button" onClick={() => onNavigate(page)}>
             <span className="dashboard-card-icon">{icon}</span>
             <h2>{title}</h2>
             <p>{description}</p>
-          </article>
+          </button>
         ))}
       </div>
     </section>

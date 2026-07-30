@@ -14,7 +14,7 @@ const EMPTY_FORM = {
   estimatedDuration: "",
 };
 
-function BusRoutesPage({ onSelectRoute }) {
+function BusRoutesPage({ onSelectRoute, canEdit = true }) {
   const [busRoutes, setBusRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -164,20 +164,17 @@ function BusRoutesPage({ onSelectRoute }) {
     <div className="vehicles-page">
       <div className="page-header">
         <div>
-          <h1>Hat Yönetimi</h1>
+          <h1>{canEdit ? "Hat Yönetimi" : "Hatlar"}</h1>
           <p>
-            Veritabanında kayıtlı hatları
-            yönetebilirsiniz.
+            Veritabanında kayıtlı hatları {canEdit ? "yönetebilirsiniz" : "görüntüleyebilirsiniz"}.
           </p>
         </div>
 
-        <button
-          type="button"
-          className="add-button"
-          onClick={openCreateModal}
-        >
-          Yeni Hat
-        </button>
+        {canEdit && (
+          <button type="button" className="add-button" onClick={openCreateModal}>
+            Yeni Hat
+          </button>
+        )}
       </div>
 
       {message && (
@@ -201,7 +198,7 @@ function BusRoutesPage({ onSelectRoute }) {
                 <th>Hat Kodu</th>
                 <th>Hat Adı</th>
                 <th>Tahmini Süre</th>
-                <th>İşlemler</th>
+                {canEdit && <th>İşlemler</th>}
               </tr>
             </thead>
 
@@ -210,19 +207,19 @@ function BusRoutesPage({ onSelectRoute }) {
                 <tr key={busRoute.id}>
                   <td>{busRoute.id}</td>
                   <td>
-            <button
-    type="button"
-    className="route-link"
-    onClick={() => onSelectRoute(busRoute)}
-  >
-    {busRoute.routeCode}
-  </button>
-</td>
+                    <button
+                      type="button"
+                      className="route-link"
+                      onClick={() => onSelectRoute(busRoute)}
+                    >
+                      {busRoute.routeCode}
+                    </button>
+                  </td>
                   <td>{busRoute.routeName}</td>
                   <td>
                     {busRoute.estimatedDuration} dakika
                   </td>
-                  <td>
+                  {canEdit && <td>
                     <button
                       type="button"
                       className="edit-button"
@@ -242,7 +239,7 @@ function BusRoutesPage({ onSelectRoute }) {
                     >
                       Sil
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))}
             </tbody>
@@ -250,7 +247,7 @@ function BusRoutesPage({ onSelectRoute }) {
         )}
       </div>
 
-      {modalOpen && (
+      {canEdit && modalOpen && (
         <div
           className="modal-backdrop"
           onMouseDown={closeModal}

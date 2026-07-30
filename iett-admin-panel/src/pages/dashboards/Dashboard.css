@@ -52,6 +52,10 @@ button.dashboard-card:hover {
   line-height: 1.6;
 }
 
+.placeholder-card {
+  min-height: 180px;
+}
+
 @media (max-width: 600px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
