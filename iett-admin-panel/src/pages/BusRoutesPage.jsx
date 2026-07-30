@@ -210,7 +210,7 @@ function BusRoutesPage({ onSelectRoute }) {
                 <tr key={busRoute.id}>
                   <td>{busRoute.id}</td>
                   <td>
-  <button
+            <button
     type="button"
     className="route-link"
     onClick={() => onSelectRoute(busRoute)}
