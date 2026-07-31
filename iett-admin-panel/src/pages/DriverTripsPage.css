@@ -1,0 +1,54 @@
+.driver-trips-page .route-code,
+.driver-trips-page .route-name {
+  display: block;
+}
+
+.driver-trips-page .route-code {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.driver-trips-page .route-name {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.trip-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.trip-status--Planned {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.trip-status--InProgress {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.trip-status--Completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.trip-status--Cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .driver-trips-page table {
+    min-width: 820px;
+  }
+}

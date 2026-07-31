@@ -1,4 +1,6 @@
-﻿using IETT.DataAccess.Context;
+﻿using System.Security.Claims;
+using IETT.Business.Abstract;
+using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Drivers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +13,14 @@ namespace IETT.Api.Controllers
     public class DriversController : ControllerBase
     {
         private readonly IETTDbContext _context;
+        private readonly IDriverService _driverService;
 
-        public DriversController(IETTDbContext context)
+        public DriversController(
+            IETTDbContext context,
+            IDriverService driverService)
         {
             _context = context;
+            _driverService = driverService;
         }
 
         [HttpGet]
@@ -68,6 +74,24 @@ namespace IETT.Api.Controllers
                 .ToList();
 
             return Ok(drivers);
+        }
+
+        [HttpGet("me/trips")]
+        [Authorize(Roles = "Driver")]
+        public async Task<IActionResult> GetMyTrips()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var trips =
+                await _driverService.GetMyTripsAsync(userId);
+
+            return Ok(trips);
         }
 
         private static string MaskIdentityNumber(

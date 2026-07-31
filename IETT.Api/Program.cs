@@ -75,6 +75,9 @@ builder.Services.AddScoped<IVehicleService, VehicleManager>();
 builder.Services.AddScoped<IBusRouteDal, EfBusRouteDal>();
 builder.Services.AddScoped<IBusRouteService, BusRouteManager>();
 
+// Driver servisleri
+builder.Services.AddScoped<IDriverService, DriverManager>();
+
 // JWT doðrulama ayarlarý
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
