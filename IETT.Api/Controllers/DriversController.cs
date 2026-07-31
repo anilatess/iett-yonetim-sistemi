@@ -112,6 +112,24 @@ namespace IETT.Api.Controllers
             return Ok(certificates);
         }
 
+        [HttpGet("me/performances")]
+        [Authorize(Roles = "Driver")]
+        public async Task<IActionResult> GetMyPerformances()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var performances =
+                await _driverService.GetMyPerformancesAsync(userId);
+
+            return Ok(performances);
+        }
+
         private static string MaskIdentityNumber(
             string identityNumber)
         {

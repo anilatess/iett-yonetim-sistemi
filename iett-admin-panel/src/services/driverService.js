@@ -13,3 +13,7 @@ export async function getMyTrips() {
 export async function getMyCertificates() {
   return apiFetch(`${API_URL}/me/certificates`);
 }
+
+export async function getMyPerformances() {
+  return apiFetch(`${API_URL}/me/performances`);
+}

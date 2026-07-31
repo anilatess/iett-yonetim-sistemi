@@ -1,6 +1,7 @@
 using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Certificates;
+using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,35 @@ namespace IETT.Business.Concrete
                     Status = status
                 };
             }).ToList();
+        }
+
+        public async Task<List<DriverPerformanceDto>> GetMyPerformancesAsync(int userId)
+        {
+            var driverId = await _context.Drivers
+                .AsNoTracking()
+                .Where(driver => driver.UserId == userId)
+                .Select(driver => (int?)driver.Id)
+                .FirstOrDefaultAsync();
+
+            if (driverId is null)
+            {
+                return new List<DriverPerformanceDto>();
+            }
+
+            return await _context.DriverPerformances
+                .AsNoTracking()
+                .Where(performance => performance.DriverId == driverId.Value)
+                .OrderByDescending(performance => performance.EvaluationDate)
+                .Select(performance => new DriverPerformanceDto
+                {
+                    Id = performance.Id,
+                    Score = performance.Score,
+                    PerformanceComment = performance.PerformanceComment ?? string.Empty,
+                    EvaluationDate = performance.EvaluationDate,
+                    InspectorFullName = performance.Inspector.User.FirstName
+                        + " " + performance.Inspector.User.LastName
+                })
+                .ToListAsync();
         }
 
         public async Task<List<DriverTripDto>> GetMyTripsAsync(int userId)
