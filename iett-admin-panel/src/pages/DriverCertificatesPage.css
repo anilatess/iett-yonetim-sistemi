@@ -1,0 +1,38 @@
+.driver-certificates-page .certificate-number {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.certificate-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.certificate-status--Expired {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.certificate-status--ExpiringSoon {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.certificate-status--Valid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+@media (max-width: 800px) {
+  .driver-certificates-page table {
+    min-width: 680px;
+  }
+}

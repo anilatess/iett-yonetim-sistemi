@@ -1,5 +1,6 @@
 using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
+using IETT.Entity.DTOs.Certificates;
 using IETT.Entity.DTOs.Trips;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,47 @@ namespace IETT.Business.Concrete
         public DriverManager(IETTDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<DriverCertificateDto>> GetMyCertificatesAsync(int userId)
+        {
+            var driverId = await _context.Drivers
+                .AsNoTracking()
+                .Where(driver => driver.UserId == userId)
+                .Select(driver => (int?)driver.Id)
+                .FirstOrDefaultAsync();
+
+            if (driverId is null)
+            {
+                return new List<DriverCertificateDto>();
+            }
+
+            var certificates = await _context.DriverCertificates
+                .AsNoTracking()
+                .Where(certificate => certificate.DriverId == driverId.Value)
+                .OrderBy(certificate => certificate.ExpiryDate)
+                .ToListAsync();
+
+            var today = DateTime.Today;
+
+            return certificates.Select(certificate =>
+            {
+                var remainingDays = (certificate.ExpiryDate.Date - today).Days;
+                var status = certificate.ExpiryDate.Date < today
+                    ? "Expired"
+                    : remainingDays <= 30
+                        ? "ExpiringSoon"
+                        : "Valid";
+
+                return new DriverCertificateDto
+                {
+                    Id = certificate.Id,
+                    CertificateNumber = certificate.CertificateNumber,
+                    ExpiryDate = certificate.ExpiryDate,
+                    RemainingDays = remainingDays,
+                    Status = status
+                };
+            }).ToList();
         }
 
         public async Task<List<DriverTripDto>> GetMyTripsAsync(int userId)

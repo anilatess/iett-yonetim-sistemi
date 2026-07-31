@@ -94,6 +94,24 @@ namespace IETT.Api.Controllers
             return Ok(trips);
         }
 
+        [HttpGet("me/certificates")]
+        [Authorize(Roles = "Driver")]
+        public async Task<IActionResult> GetMyCertificates()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var certificates =
+                await _driverService.GetMyCertificatesAsync(userId);
+
+            return Ok(certificates);
+        }
+
         private static string MaskIdentityNumber(
             string identityNumber)
         {
