@@ -24,7 +24,7 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "IETT Yönetim Sistemi API",
+        Title = "IETT YÃ¶netim Sistemi API",
         Version = "v1"
     });
 
@@ -35,7 +35,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT token deðerini giriniz."
+        Description = "JWT token deÄŸerini giriniz."
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -54,20 +54,20 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Veritabaný baðlantýsý
+// VeritabanÄ± baÄŸlantÄ±sÄ±
 builder.Services.AddDbContext<IETTDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
 
-// Kullanýcý ve giriþ servisleri
+// KullanÄ±cÄ± ve giriÅŸ servisleri
 builder.Services.AddScoped<IUserDal, EfUserDal>();
 builder.Services.AddScoped<IAuthService, AuthManager>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-// Araç servisleri
+// AraÃ§ servisleri
 builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
 builder.Services.AddScoped<IVehicleService, VehicleManager>();
 
@@ -78,20 +78,23 @@ builder.Services.AddScoped<IBusRouteService, BusRouteManager>();
 // Driver servisleri
 builder.Services.AddScoped<IDriverService, DriverManager>();
 
-// JWT doðrulama ayarlarý
+// Inspector servisleri
+builder.Services.AddScoped<IInspectorService, InspectorManager>();
+
+// JWT doÄŸrulama ayarlarÄ±
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
-        "Jwt:Key appsettings.json içerisinde bulunamadý."
+        "Jwt:Key appsettings.json iÃ§erisinde bulunamadÄ±."
     );
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException(
-        "Jwt:Issuer appsettings.json içerisinde bulunamadý."
+        "Jwt:Issuer appsettings.json iÃ§erisinde bulunamadÄ±."
     );
 
 var jwtAudience = builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException(
-        "Jwt:Audience appsettings.json içerisinde bulunamadý."
+        "Jwt:Audience appsettings.json iÃ§erisinde bulunamadÄ±."
     );
 
 builder.Services
@@ -126,7 +129,7 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// React uygulamasýnýn API'ye eriþebilmesi için
+// React uygulamasÄ±nÄ±n API'ye eriÅŸebilmesi iÃ§in
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -151,7 +154,7 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowReactApp");
 
-// Sýralama önemlidir
+// SÄ±ralama Ã¶nemlidir
 app.UseAuthentication();
 app.UseAuthorization();
 
