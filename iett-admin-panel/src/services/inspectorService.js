@@ -8,3 +8,7 @@ export async function createDriverPerformance(performance) {
     body: JSON.stringify(performance),
   });
 }
+
+export async function getMyPerformanceHistory() {
+  return apiFetch(`${API_URL}/me/performances`);
+}

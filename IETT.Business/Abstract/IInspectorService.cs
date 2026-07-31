@@ -8,5 +8,9 @@ namespace IETT.Business.Abstract
             int userId,
             CreateDriverPerformanceDto dto
         );
+
+        Task<List<InspectorPerformanceHistoryDto>> GetMyPerformancesAsync(
+            int userId
+        );
     }
 }

@@ -65,5 +65,37 @@ namespace IETT.Business.Concrete
                 InspectorFullName = inspector.FirstName + " " + inspector.LastName
             };
         }
+
+        public async Task<List<InspectorPerformanceHistoryDto>> GetMyPerformancesAsync(
+            int userId)
+        {
+            var inspectorId = await _context.Inspectors
+                .AsNoTracking()
+                .Where(inspector => inspector.UserId == userId)
+                .Select(inspector => (int?)inspector.Id)
+                .FirstOrDefaultAsync();
+
+            if (inspectorId is null)
+            {
+                return new List<InspectorPerformanceHistoryDto>();
+            }
+
+            return await _context.DriverPerformances
+                .AsNoTracking()
+                .Where(performance => performance.InspectorId == inspectorId.Value)
+                .OrderByDescending(performance => performance.EvaluationDate)
+                .Select(performance => new InspectorPerformanceHistoryDto
+                {
+                    Id = performance.Id,
+                    DriverId = performance.DriverId,
+                    DriverFullName = performance.Driver.User.FirstName
+                        + " " + performance.Driver.User.LastName,
+                    PersonnelNumber = performance.Driver.PersonnelNumber,
+                    Score = performance.Score,
+                    PerformanceComment = performance.PerformanceComment ?? string.Empty,
+                    EvaluationDate = performance.EvaluationDate
+                })
+                .ToListAsync();
+        }
     }
 }

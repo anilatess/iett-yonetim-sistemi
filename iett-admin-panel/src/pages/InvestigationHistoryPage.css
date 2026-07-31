@@ -1,0 +1,118 @@
+.history-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.history-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 22px;
+  border: 1px solid #bae6fd;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #f0f9ff, #ffffff);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.history-summary-card span {
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.history-summary-card strong {
+  color: #0369a1;
+  font-size: 27px;
+}
+
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.history-toolbar input {
+  width: 100%;
+  max-width: 430px;
+  padding: 12px 15px;
+  border: 1px solid #d8dee8;
+  border-radius: 10px;
+  outline: none;
+  background: #ffffff;
+}
+
+.history-toolbar input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.history-toolbar span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-driver-name {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.history-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.history-score strong {
+  font-size: 15px;
+}
+
+.history-score--successful {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.history-score--improvable {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.history-score--low {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.history-comment {
+  min-width: 280px;
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .history-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-toolbar input {
+    max-width: none;
+  }
+
+  .investigation-history-page table {
+    min-width: 980px;
+  }
+}

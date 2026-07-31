@@ -17,6 +17,24 @@ namespace IETT.Api.Controllers
             _inspectorService = inspectorService;
         }
 
+        [HttpGet("me/performances")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> GetMyPerformances()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var performances = await _inspectorService
+                .GetMyPerformancesAsync(userId);
+
+            return Ok(performances);
+        }
+
         [HttpPost("me/performances")]
         [Authorize(Roles = "Inspector")]
         public async Task<IActionResult> CreatePerformance(

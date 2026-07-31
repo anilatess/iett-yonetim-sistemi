@@ -26,7 +26,7 @@ export const navigationByRole = {
       ["busRoutes", "🛣️", "Hatlar"],
       ["inspectorComplaints", "💬", "Şikâyet İncelemeleri"],
       ["performanceEvaluation", "📊", "Performans Değerlendirme"],
-      ["investigationHistory", "🕘", "İnceleme Geçmişim"],
+      ["investigationHistory", "🕘", "Değerlendirme Geçmişim"],
       ["profile", "👤", "Profilim"],
     ],
     additionalPages: ["busStops"],
