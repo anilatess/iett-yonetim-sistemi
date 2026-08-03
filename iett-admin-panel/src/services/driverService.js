@@ -1,6 +1,6 @@
 import { apiFetch } from "./apiClient";
 
-const API_URL = "https://localhost:7034/api/Drivers";
+const API_URL = "http://localhost:5147/api/Drivers";
 
 export async function getDrivers() {
   return apiFetch(API_URL);

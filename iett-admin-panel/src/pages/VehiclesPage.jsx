@@ -10,7 +10,7 @@ import {
 import { apiFetch } from "../services/apiClient";
 
 const VEHICLE_STATUS_API_URL =
-  "https://localhost:7034/api/VehicleStatuses";
+  "http://localhost:5147/api/VehicleStatuses";
 
 function VehiclesPage({ canEdit = true }) {
   const [vehicles, setVehicles] = useState([]);

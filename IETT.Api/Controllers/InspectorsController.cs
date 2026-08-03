@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using IETT.Business.Abstract;
 using IETT.Entity.DTOs.Performances;
+using IETT.Entity.DTOs.Investigations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,6 +16,60 @@ namespace IETT.Api.Controllers
         public InspectorsController(IInspectorService inspectorService)
         {
             _inspectorService = inspectorService;
+        }
+
+        [HttpGet("me/investigations")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> GetMyInvestigations()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var investigations = await _inspectorService
+                .GetMyInvestigationsAsync(userId);
+
+            if (investigations is null)
+            {
+                return NotFound("Denetimci kaydı bulunamadı.");
+            }
+
+            return Ok(investigations);
+        }
+
+        [HttpPut("me/investigations/{id:int}/complete")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> CompleteInvestigation(
+            int id,
+            CompleteInvestigationDto dto)
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var completionStatus = await _inspectorService
+                .CompleteInvestigationAsync(userId, id, dto);
+
+            return completionStatus switch
+            {
+                InvestigationCompletionStatus.Completed => NoContent(),
+                InvestigationCompletionStatus.AlreadyCompleted => Conflict(new
+                {
+                    message = "Bu inceleme görevi daha önce sonuçlandırılmış."
+                }),
+                _ => NotFound(new
+                {
+                    message = "İnceleme görevi bulunamadı."
+                })
+            };
         }
 
         [HttpGet("me/performances")]

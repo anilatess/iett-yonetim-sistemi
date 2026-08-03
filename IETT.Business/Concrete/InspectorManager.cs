@@ -1,7 +1,9 @@
 using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Performances;
+using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.Entities;
+using IETT.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace IETT.Business.Concrete
@@ -96,6 +98,122 @@ namespace IETT.Business.Concrete
                     EvaluationDate = performance.EvaluationDate
                 })
                 .ToListAsync();
+        }
+
+        public async Task<List<InspectorInvestigationDto>?> GetMyInvestigationsAsync(
+            int userId)
+        {
+            var inspectorId = await _context.Inspectors
+                .AsNoTracking()
+                .Where(inspector => inspector.UserId == userId)
+                .Select(inspector => (int?)inspector.Id)
+                .FirstOrDefaultAsync();
+
+            if (inspectorId is null)
+            {
+                return null;
+            }
+
+            return await _context.Investigations
+                .AsNoTracking()
+                .Where(investigation => investigation.InspectorId == inspectorId.Value)
+                .OrderBy(investigation => investigation.ClosedDate.HasValue)
+                .ThenByDescending(investigation => investigation.CreatedDate)
+                .Select(investigation => new InspectorInvestigationDto
+                {
+                    Id = investigation.Id,
+                    ComplaintId = investigation.ComplaintId,
+                    TrackingCode = investigation.Complaint.TrackingCode,
+                    ComplaintTypeName = investigation.Complaint.ComplaintType.ComplaintTypeName,
+                    ComplaintDescription = investigation.Complaint.ComplaintDescription,
+                    ComplaintCreatedDate = investigation.Complaint.CreatedDate,
+                    InvestigationTitle = investigation.InvestigationTitle,
+                    InvestigationDescription = investigation.InvestigationDescription ?? string.Empty,
+                    InvestigationResult = investigation.InvestigationResult ?? string.Empty,
+                    InvestigationCreatedDate = investigation.CreatedDate,
+                    ClosedDate = investigation.ClosedDate,
+                    Status = investigation.ClosedDate.HasValue ? "Tamamlandı" : "Devam Ediyor",
+                    DriverId = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.DriverId,
+                    DriverFullName = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.Driver.User.FirstName
+                            + " " + investigation.Complaint.Trip.Driver.User.LastName,
+                    PersonnelNumber = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.Driver.PersonnelNumber,
+                    VehicleId = investigation.Complaint.VehicleId,
+                    VehicleDoorNumber = investigation.Complaint.Vehicle.DoorNumber,
+                    RouteId = investigation.Complaint.RouteId,
+                    RouteCode = investigation.Complaint.BusRoute.RouteCode,
+                    RouteName = investigation.Complaint.BusRoute.RouteName,
+                    StopId = investigation.Complaint.StopId,
+                    StopCode = investigation.Complaint.BusStop.StopCode,
+                    StopName = investigation.Complaint.BusStop.StopName,
+                    TripId = investigation.Complaint.TripId,
+                    TripDate = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.TripDate,
+                    DepertureTime = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.DepertureTime,
+                    ArrivalTime = investigation.Complaint.Trip == null
+                        ? null
+                        : investigation.Complaint.Trip.ArrivalTime
+                })
+                .ToListAsync();
+        }
+
+        public async Task<InvestigationCompletionStatus> CompleteInvestigationAsync(
+            int userId,
+            int investigationId,
+            CompleteInvestigationDto dto)
+        {
+            var inspectorId = await _context.Inspectors
+                .AsNoTracking()
+                .Where(inspector => inspector.UserId == userId)
+                .Select(inspector => (int?)inspector.Id)
+                .FirstOrDefaultAsync();
+
+            if (inspectorId is null)
+            {
+                return InvestigationCompletionStatus.NotFound;
+            }
+
+            var investigation = await _context.Investigations
+                .Include(item => item.Complaint)
+                .FirstOrDefaultAsync(item =>
+                    item.Id == investigationId
+                    && item.InspectorId == inspectorId.Value);
+
+            if (investigation is null)
+            {
+                return InvestigationCompletionStatus.NotFound;
+            }
+
+            if (investigation.ClosedDate.HasValue)
+            {
+                return InvestigationCompletionStatus.AlreadyCompleted;
+            }
+
+            investigation.InvestigationResult = dto.InvestigationResult.Trim();
+            investigation.ClosedDate = DateTime.Now;
+
+            var hasAnotherOpenInvestigation = await _context.Investigations
+                .AsNoTracking()
+                .AnyAsync(item =>
+                    item.ComplaintId == investigation.ComplaintId
+                    && item.Id != investigation.Id
+                    && !item.ClosedDate.HasValue);
+
+            if (!hasAnotherOpenInvestigation)
+            {
+                investigation.Complaint.ComplaintStatus = ComplaintStatusEnum.Resolved;
+            }
+
+            await _context.SaveChangesAsync();
+            return InvestigationCompletionStatus.Completed;
         }
     }
 }
