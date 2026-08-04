@@ -1,4 +1,5 @@
 using IETT.Entity.DTOs.Certificates;
+using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
 
@@ -6,6 +7,8 @@ namespace IETT.Business.Abstract
 {
     public interface IDriverService
     {
+        Task<List<DriverListDto>?> GetAllAsync(int userId, string role);
+
         Task<List<DriverCertificateDto>> GetMyCertificatesAsync(int userId);
 
         Task<List<DriverPerformanceDto>> GetMyPerformancesAsync(int userId);

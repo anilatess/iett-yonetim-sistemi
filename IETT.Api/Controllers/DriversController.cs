@@ -1,10 +1,8 @@
 ﻿using System.Security.Claims;
 using IETT.Business.Abstract;
-using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Drivers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace IETT.Api.Controllers
 {
@@ -12,14 +10,10 @@ namespace IETT.Api.Controllers
     [ApiController]
     public class DriversController : ControllerBase
     {
-        private readonly IETTDbContext _context;
         private readonly IDriverService _driverService;
 
-        public DriversController(
-            IETTDbContext context,
-            IDriverService driverService)
+        public DriversController(IDriverService driverService)
         {
-            _context = context;
             _driverService = driverService;
         }
 
@@ -27,51 +21,31 @@ namespace IETT.Api.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<ActionResult<List<DriverListDto>>> GetAll()
         {
-            var driverData = await _context.Drivers
-                .AsNoTracking()
-                .Select(driver => new
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+
+            if (role is not ("Admin" or "Inspector"))
+            {
+                return Forbid();
+            }
+
+            var drivers = await _driverService
+                .GetAllAsync(userId, role);
+
+            if (drivers is null)
+            {
+                return NotFound(new
                 {
-                    driver.Id,
-                    driver.PersonnelNumber,
-                    driver.HolidayDay,
-
-                    driver.User.FirstName,
-                    driver.User.LastName,
-                    driver.User.IdentityNumber,
-
-                    driver.Garage.GarageName,
-                    driver.Operator.OperatorName,
-
-                    DriverStatusName =
-                        driver.DriverStatus.StatusName
-                })
-                .ToListAsync();
-
-            var drivers = driverData
-                .Select(driver => new DriverListDto
-                {
-                    Id = driver.Id,
-
-                    FullName =
-                        driver.FirstName + " " +
-                        driver.LastName,
-
-                    MaskedIdentityNumber =
-                        MaskIdentityNumber(driver.IdentityNumber),
-
-                    PersonnelNumber = driver.PersonnelNumber,
-
-                    GarageName = driver.GarageName,
-
-                    OperatorName = driver.OperatorName,
-
-                    DriverStatusName =
-                        driver.DriverStatusName,
-
-                    HolidayDay =
-                        driver.HolidayDay.ToString()
-                })
-                .ToList();
+                    message = "Denetimci kaydı bulunamadı."
+                });
+            }
 
             return Ok(drivers);
         }
@@ -130,22 +104,5 @@ namespace IETT.Api.Controllers
             return Ok(performances);
         }
 
-        private static string MaskIdentityNumber(
-            string identityNumber)
-        {
-            if (string.IsNullOrWhiteSpace(identityNumber))
-            {
-                return "***********";
-            }
-
-            if (identityNumber.Length < 4)
-            {
-                return new string('*', identityNumber.Length);
-            }
-
-            return identityNumber[..2]
-                + new string('*', identityNumber.Length - 4)
-                + identityNumber[^2..];
-        }
     }
 }

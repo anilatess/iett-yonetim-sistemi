@@ -27,6 +27,7 @@ namespace IETT.Business.Concrete
                 .Select(inspector => new
                 {
                     inspector.Id,
+                    inspector.GarageId,
                     inspector.User.FirstName,
                     inspector.User.LastName
                 })
@@ -39,7 +40,9 @@ namespace IETT.Business.Concrete
 
             var driverExists = await _context.Drivers
                 .AsNoTracking()
-                .AnyAsync(driver => driver.Id == dto.DriverId);
+                .AnyAsync(driver =>
+                    driver.Id == dto.DriverId
+                    && driver.GarageId == inspector.GarageId);
 
             if (!driverExists)
             {

@@ -1,6 +1,7 @@
 using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Certificates;
+using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,63 @@ namespace IETT.Business.Concrete
         public DriverManager(IETTDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<DriverListDto>?> GetAllAsync(
+            int userId,
+            string role)
+        {
+            int? garageId = null;
+
+            if (role == "Inspector")
+            {
+                garageId = await _context.Inspectors
+                    .AsNoTracking()
+                    .Where(inspector => inspector.UserId == userId)
+                    .Select(inspector => (int?)inspector.GarageId)
+                    .FirstOrDefaultAsync();
+
+                if (garageId is null)
+                {
+                    return null;
+                }
+            }
+
+            var query = _context.Drivers.AsNoTracking();
+
+            if (garageId.HasValue)
+            {
+                query = query.Where(driver =>
+                    driver.GarageId == garageId.Value);
+            }
+
+            var driverData = await query
+                .Select(driver => new
+                {
+                    driver.Id,
+                    driver.PersonnelNumber,
+                    driver.HolidayDay,
+                    driver.User.FirstName,
+                    driver.User.LastName,
+                    driver.User.IdentityNumber,
+                    driver.Garage.GarageName,
+                    driver.Operator.OperatorName,
+                    DriverStatusName = driver.DriverStatus.StatusName
+                })
+                .ToListAsync();
+
+            return driverData.Select(driver => new DriverListDto
+            {
+                Id = driver.Id,
+                FullName = driver.FirstName + " " + driver.LastName,
+                MaskedIdentityNumber =
+                    MaskIdentityNumber(driver.IdentityNumber),
+                PersonnelNumber = driver.PersonnelNumber,
+                GarageName = driver.GarageName,
+                OperatorName = driver.OperatorName,
+                DriverStatusName = driver.DriverStatusName,
+                HolidayDay = driver.HolidayDay.ToString()
+            }).ToList();
         }
 
         public async Task<List<DriverCertificateDto>> GetMyCertificatesAsync(int userId)
@@ -116,6 +174,23 @@ namespace IETT.Business.Concrete
                     TripStatus = trip.TripStatus.ToString()
                 })
                 .ToListAsync();
+        }
+
+        private static string MaskIdentityNumber(string identityNumber)
+        {
+            if (string.IsNullOrWhiteSpace(identityNumber))
+            {
+                return "***********";
+            }
+
+            if (identityNumber.Length < 4)
+            {
+                return new string('*', identityNumber.Length);
+            }
+
+            return identityNumber[..2]
+                + new string('*', identityNumber.Length - 4)
+                + identityNumber[^2..];
         }
     }
 }
