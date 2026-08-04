@@ -12,3 +12,10 @@ export async function createTrip(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function updateTrip(id, payload) {
+  return apiFetch(`${API_URL}/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}

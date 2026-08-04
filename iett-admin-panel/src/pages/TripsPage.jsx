@@ -3,7 +3,7 @@ import "./TripsPage.css";
 
 import { getBusRoutes } from "../services/busRouteService";
 import { getDrivers } from "../services/driverService";
-import { createTrip, getTrips } from "../services/tripService";
+import { createTrip, getTrips, updateTrip } from "../services/tripService";
 import { getVehicles } from "../services/vehicleService";
 
 const tripStatusNames = {
@@ -50,6 +50,10 @@ function toApiTime(value) {
   return value.length === 5 ? `${value}:00` : value;
 }
 
+function toDateInput(value) {
+  return value ? String(value).split("T")[0] : "";
+}
+
 function TripsPage() {
   const [trips, setTrips] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -62,6 +66,7 @@ function TripsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
   const [modalError, setModalError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -129,7 +134,23 @@ function TripsPage() {
   }, [search, trips]);
 
   function openCreateModal() {
+    setEditingTrip(null);
     setFormData(EMPTY_FORM);
+    setModalError(referenceError);
+    setModalOpen(true);
+  }
+
+  function openEditModal(trip) {
+    setEditingTrip(trip);
+    setFormData({
+      driverId: String(trip.driverId),
+      vehicleId: String(trip.vehicleId),
+      routeId: String(trip.routeId),
+      tripDate: toDateInput(trip.tripDate),
+      depertureTime: formatTime(trip.depertureTime),
+      arrivalTime: formatTime(trip.arrivalTime),
+      tripStatus: String(trip.tripStatus),
+    });
     setModalError(referenceError);
     setModalOpen(true);
   }
@@ -140,6 +161,7 @@ function TripsPage() {
     }
 
     setModalOpen(false);
+    setEditingTrip(null);
     setModalError("");
     setFormData(EMPTY_FORM);
   }
@@ -214,14 +236,29 @@ function TripsPage() {
       setModalError("");
       setSuccessMessage("");
 
-      await createTrip(payload);
+      if (editingTrip) {
+        await updateTrip(editingTrip.id, payload);
+      } else {
+        await createTrip(payload);
+      }
+
       await loadTrips();
 
       setModalOpen(false);
+      setEditingTrip(null);
       setFormData(EMPTY_FORM);
-      setSuccessMessage("Sefer başarıyla planlandı.");
+      setSuccessMessage(
+        editingTrip
+          ? "Sefer başarıyla güncellendi."
+          : "Sefer başarıyla planlandı.",
+      );
     } catch (requestError) {
-      setModalError(requestError.message || "Sefer oluşturulamadı.");
+      setModalError(
+        requestError.message ||
+          (editingTrip
+            ? "Sefer güncellenemedi."
+            : "Sefer oluşturulamadı."),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -299,6 +336,7 @@ function TripsPage() {
                   <th>Kalkış Saati</th>
                   <th>Varış Saati</th>
                   <th>Durum</th>
+                  <th>İşlem</th>
                 </tr>
               </thead>
 
@@ -322,6 +360,15 @@ function TripsPage() {
                         {trip.tripStatusName || tripStatusNames[trip.tripStatus] || "Bilinmiyor"}
                       </span>
                     </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="trip-edit-button"
+                        onClick={() => openEditModal(trip)}
+                      >
+                        Düzenle
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -341,7 +388,9 @@ function TripsPage() {
           >
             <div className="trip-modal-header">
               <div>
-                <h2 id="trip-modal-title">Yeni Sefer Planla</h2>
+                <h2 id="trip-modal-title">
+                  {editingTrip ? "Seferi Düzenle" : "Yeni Sefer Planla"}
+                </h2>
                 <p>Sefer ve görevlendirme bilgilerini doldurun.</p>
               </div>
 
@@ -429,7 +478,13 @@ function TripsPage() {
                     Vazgeç
                   </button>
                   <button type="submit" className="trip-save-button" disabled={submitting || Boolean(referenceError)}>
-                    {submitting ? "Planlanıyor..." : "Seferi Planla"}
+                    {submitting
+                      ? editingTrip
+                        ? "Kaydediliyor..."
+                        : "Planlanıyor..."
+                      : editingTrip
+                        ? "Değişiklikleri Kaydet"
+                        : "Seferi Planla"}
                   </button>
                 </div>
               </form>

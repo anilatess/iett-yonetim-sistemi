@@ -154,6 +154,20 @@
   font-weight: 800;
 }
 
+.trip-edit-button {
+  padding: 8px 13px;
+  border-radius: 8px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trip-edit-button:hover {
+  background: #bae6fd;
+}
+
 .trip-status {
   display: inline-flex;
   align-items: center;
