@@ -39,6 +39,7 @@ export const navigationByRole = {
       ["driverDashboard", "🏠", "Dashboard"],
       ["driverTasks", "📋", "Görevlerim"],
       ["driverTrips", "🚌", "Seferlerim"],
+      ["driverComplaints", "💬", "Şikâyetlerim"],
       ["driverCertificates", "📄", "Sertifikalarım"],
       ["driverPerformance", "📊", "Performansım"],
       ["profile", "👤", "Profilim"],

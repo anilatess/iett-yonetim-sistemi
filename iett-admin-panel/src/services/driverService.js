@@ -21,3 +21,7 @@ export async function getDriverCertificates(driverId) {
 export async function getMyPerformances() {
   return apiFetch(`${API_URL}/me/performances`);
 }
+
+export async function getMyComplaints() {
+  return apiFetch(`${API_URL}/me/complaints`);
+}

@@ -24,6 +24,7 @@ import DriverTasksPage from "./pages/DriverTasksPage";
 import DriverTripsPage from "./pages/DriverTripsPage";
 import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
+import DriverComplaintsPage from "./pages/DriverComplaintsPage";
 import {
   getStartPage,
   isPageAllowed,
@@ -161,6 +162,8 @@ function App() {
         return <DriverTasksPage />;
       case "driverTrips":
         return <DriverTripsPage />;
+      case "driverComplaints":
+        return <DriverComplaintsPage />;
       case "driverCertificates":
         return <DriverCertificatesPage />;
       case "driverPerformance":

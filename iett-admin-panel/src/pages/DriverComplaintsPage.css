@@ -1,0 +1,92 @@
+.driver-complaints-page {
+  width: 100%;
+}
+
+.driver-complaints-card {
+  overflow: hidden;
+}
+
+.driver-complaints-table-wrapper {
+  overflow-x: auto;
+}
+
+.driver-complaints-page table {
+  min-width: 1780px;
+}
+
+.driver-complaints-page th,
+.driver-complaints-page td {
+  vertical-align: top;
+}
+
+.complaint-tracking-code {
+  color: #0f172a;
+  font-family: monospace;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.driver-complaint-description,
+.investigation-result {
+  min-width: 220px;
+  max-width: 320px;
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.investigation-result {
+  color: #475569;
+}
+
+.complaint-reference-code,
+.complaint-reference-name {
+  display: block;
+}
+
+.complaint-reference-code {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.complaint-reference-name {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.complaint-status {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.complaint-status--1 {
+  background: #fef3c7;
+  color: #a16207;
+}
+
+.complaint-status--2 {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.complaint-status--3 {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.complaint-status--4 {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .driver-complaints-card {
+    overflow-x: auto;
+  }
+}

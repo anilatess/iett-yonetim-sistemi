@@ -1,9 +1,11 @@
 using IETT.Business.Abstract;
 using IETT.DataAccess.Context;
 using IETT.Entity.DTOs.Certificates;
+using IETT.Entity.DTOs.Complaints;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
+using IETT.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace IETT.Business.Concrete
@@ -216,6 +218,74 @@ namespace IETT.Business.Concrete
                     DepertureTime = trip.DepertureTime,
                     ArrivalTime = trip.ArrivalTime,
                     TripStatus = trip.TripStatus.ToString()
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<DriverComplaintDto>?> GetMyComplaintsAsync(
+            int userId)
+        {
+            var driverId = await _context.Drivers
+                .AsNoTracking()
+                .Where(driver => driver.UserId == userId)
+                .Select(driver => (int?)driver.Id)
+                .FirstOrDefaultAsync();
+
+            if (driverId is null)
+            {
+                return null;
+            }
+
+            return await _context.Complaints
+                .AsNoTracking()
+                .Where(complaint =>
+                    complaint.TripId.HasValue
+                    && complaint.Trip != null
+                    && complaint.Trip.DriverId == driverId.Value)
+                .OrderByDescending(complaint => complaint.CreatedDate)
+                .Select(complaint => new DriverComplaintDto
+                {
+                    Id = complaint.Id,
+                    TrackingCode = complaint.TrackingCode,
+                    ComplaintTypeName =
+                        complaint.ComplaintType.ComplaintTypeName,
+                    ComplaintDescription = complaint.ComplaintDescription,
+                    ComplaintCreatedDate = complaint.CreatedDate,
+                    ComplaintStatus = complaint.ComplaintStatus,
+                    ComplaintStatusName =
+                        complaint.ComplaintStatus == ComplaintStatusEnum.Pending
+                            ? "Beklemede"
+                            : complaint.ComplaintStatus == ComplaintStatusEnum.UnderReview
+                                ? "İnceleniyor"
+                                : complaint.ComplaintStatus == ComplaintStatusEnum.Resolved
+                                    ? "Çözüldü"
+                                    : complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
+                                        ? "Reddedildi"
+                                        : "Bilinmiyor",
+                    TripId = complaint.Trip!.Id,
+                    TripDate = complaint.Trip!.TripDate,
+                    DepertureTime = complaint.Trip.DepertureTime,
+                    ArrivalTime = complaint.Trip.ArrivalTime,
+                    RouteId = complaint.RouteId,
+                    RouteCode = complaint.BusRoute.RouteCode,
+                    RouteName = complaint.BusRoute.RouteName,
+                    VehicleId = complaint.VehicleId,
+                    VehicleDoorNumber = complaint.Vehicle.DoorNumber,
+                    StopId = complaint.StopId,
+                    StopCode = complaint.BusStop.StopCode,
+                    StopName = complaint.BusStop.StopName,
+                    InvestigationResult = complaint.Investigations
+                        .Where(investigation => investigation.ClosedDate.HasValue)
+                        .OrderByDescending(investigation => investigation.ClosedDate)
+                        .ThenByDescending(investigation => investigation.Id)
+                        .Select(investigation => investigation.InvestigationResult)
+                        .FirstOrDefault(),
+                    InvestigationClosedDate = complaint.Investigations
+                        .Where(investigation => investigation.ClosedDate.HasValue)
+                        .OrderByDescending(investigation => investigation.ClosedDate)
+                        .ThenByDescending(investigation => investigation.Id)
+                        .Select(investigation => investigation.ClosedDate)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
         }

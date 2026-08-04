@@ -3,6 +3,7 @@ import "./Dashboard.css";
 const driverSections = [
   ["driverTasks", "📋", "Görevlerim", "Atanan görevleriniz burada gösterilecek."],
   ["driverTrips", "🚌", "Seferlerim", "Planlanan seferleriniz burada gösterilecek."],
+  ["driverComplaints", "💬", "Şikâyetlerim", "Seferlerinizle ilişkili şikâyetleri görüntüleyin."],
   ["driverCertificates", "📄", "Sertifikalarım", "Sertifika bilgileriniz burada gösterilecek."],
   ["driverPerformance", "📊", "Performansım", "Performans değerlendirmeleriniz burada gösterilecek."],
   ["profile", "👤", "Profilim", "Kullanıcı ve personel bilgilerinizi görüntüleyin."],

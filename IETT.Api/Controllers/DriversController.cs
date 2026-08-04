@@ -68,6 +68,32 @@ namespace IETT.Api.Controllers
             return Ok(trips);
         }
 
+        [HttpGet("me/complaints")]
+        [Authorize(Roles = "Driver")]
+        public async Task<IActionResult> GetMyComplaints()
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var complaints =
+                await _driverService.GetMyComplaintsAsync(userId);
+
+            if (complaints is null)
+            {
+                return NotFound(new
+                {
+                    message = "Şoför kaydı bulunamadı."
+                });
+            }
+
+            return Ok(complaints);
+        }
+
         [HttpGet("me/certificates")]
         [Authorize(Roles = "Driver")]
         public async Task<IActionResult> GetMyCertificates()

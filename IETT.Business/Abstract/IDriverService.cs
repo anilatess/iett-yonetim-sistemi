@@ -1,4 +1,5 @@
 using IETT.Entity.DTOs.Certificates;
+using IETT.Entity.DTOs.Complaints;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
@@ -19,5 +20,7 @@ namespace IETT.Business.Abstract
         Task<List<DriverPerformanceDto>> GetMyPerformancesAsync(int userId);
 
         Task<List<DriverTripDto>> GetMyTripsAsync(int userId);
+
+        Task<List<DriverComplaintDto>?> GetMyComplaintsAsync(int userId);
     }
 }
