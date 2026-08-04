@@ -8,6 +8,7 @@ const inspectorSections = [
   ["drivers", "👤", "Şoförler", "Şoför bilgilerini görüntüleyin."],
   ["vehicles", "🚌", "Araçlar", "Araçları salt okunur görüntüleyin."],
   ["busRoutes", "🛣️", "Hatlar", "Hatları ve duraklarını görüntüleyin."],
+  ["trips", "🗓️", "Sefer Yönetimi", "Garajınızdaki şoförlerin planlanan seferlerini görüntüleyin ve yönetin."],
 ];
 
 function InspectorDashboard({ currentUser, onNavigate }) {

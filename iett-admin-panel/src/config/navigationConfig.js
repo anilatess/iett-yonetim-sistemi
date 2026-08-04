@@ -24,6 +24,7 @@ export const navigationByRole = {
       ["drivers", "👤", "Şoförler"],
       ["vehicles", "🚌", "Araçlar"],
       ["busRoutes", "🛣️", "Hatlar"],
+      ["trips", "🗓️", "Seferler"],
       ["inspectorComplaints", "💬", "Şikâyet İncelemeleri"],
       ["performanceEvaluation", "📊", "Performans Değerlendirme"],
       ["investigationHistory", "🕘", "Değerlendirme Geçmişim"],
