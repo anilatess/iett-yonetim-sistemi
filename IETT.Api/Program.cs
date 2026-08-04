@@ -81,6 +81,9 @@ builder.Services.AddScoped<IDriverService, DriverManager>();
 // Inspector servisleri
 builder.Services.AddScoped<IInspectorService, InspectorManager>();
 
+// Trip servisleri
+builder.Services.AddScoped<ITripService, TripManager>();
+
 // JWT doğrulama ayarları
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
