@@ -20,6 +20,13 @@ export async function updateVehicle(vehicle) {
   });
 }
 
+export async function updateVehicleStatus(vehicleId, vehicleStatusId) {
+  return apiFetch(`${API_URL}/${vehicleId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ vehicleStatusId }),
+  });
+}
+
 export async function deleteVehicle(id) {
   return apiFetch(`${API_URL}/${id}`, {
     method: "DELETE",

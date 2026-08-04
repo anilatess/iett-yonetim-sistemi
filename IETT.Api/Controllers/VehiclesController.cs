@@ -92,6 +92,44 @@ namespace IETT.Api.Controllers
             }
         }
 
+        [HttpPatch("{id:int}/status")]
+        [Authorize(Roles = "Admin,Inspector")]
+        public async Task<IActionResult> UpdateStatus(
+            int id,
+            UpdateVehicleStatusDto dto)
+        {
+            if (id < 1)
+            {
+                return BadRequest(new
+                {
+                    message = "Araç ID değeri geçersiz."
+                });
+            }
+
+            try
+            {
+                var updated = await _vehicleService
+                    .UpdateStatusAsync(id, dto.VehicleStatusId);
+
+                if (!updated)
+                {
+                    return NotFound(new
+                    {
+                        message = "Araç bulunamadı."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (ArgumentException exception)
+            {
+                return BadRequest(new
+                {
+                    message = exception.Message
+                });
+            }
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)

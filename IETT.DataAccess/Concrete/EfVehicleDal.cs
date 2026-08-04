@@ -2,6 +2,7 @@
 using IETT.DataAccess.Context;
 using IETT.DataAccess.Repositories;
 using IETT.Entity.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace IETT.DataAccess.Concrete
 {
@@ -12,6 +13,14 @@ namespace IETT.DataAccess.Concrete
         public EfVehicleDal(IETTDbContext context)
             : base(context)
         {
+        }
+
+        public async Task<bool> VehicleStatusExistsAsync(
+            int vehicleStatusId)
+        {
+            return await Context.VehicleStatuses
+                .AsNoTracking()
+                .AnyAsync(status => status.Id == vehicleStatusId);
         }
     }
 }

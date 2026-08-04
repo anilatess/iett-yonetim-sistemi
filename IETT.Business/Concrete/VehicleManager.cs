@@ -76,6 +76,32 @@ namespace IETT.Business.Concrete
             _vehicleDal.Update(vehicle);
         }
 
+        public async Task<bool> UpdateStatusAsync(
+            int vehicleId,
+            int vehicleStatusId)
+        {
+            var vehicle = await _vehicleDal.GetAsync(x => x.Id == vehicleId);
+
+            if (vehicle == null)
+            {
+                return false;
+            }
+
+            var statusExists = await _vehicleDal
+                .VehicleStatusExistsAsync(vehicleStatusId);
+
+            if (!statusExists)
+            {
+                throw new ArgumentException(
+                    "Gönderilen araç durumu bulunamadı.");
+            }
+
+            vehicle.VehicleStatusId = vehicleStatusId;
+            _vehicleDal.Update(vehicle);
+
+            return true;
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var vehicle = await _vehicleDal.GetAsync(x => x.Id == id);

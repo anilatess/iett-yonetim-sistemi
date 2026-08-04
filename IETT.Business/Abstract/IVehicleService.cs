@@ -12,6 +12,10 @@ namespace IETT.Business.Abstract
 
         Task UpdateAsync(UpdateVehicleDto dto);
 
+        Task<bool> UpdateStatusAsync(
+            int vehicleId,
+            int vehicleStatusId);
+
         Task<bool> DeleteAsync(int id);
     }
 }

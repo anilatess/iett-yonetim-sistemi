@@ -114,6 +114,10 @@ function App() {
 
   function renderPage(page) {
     const canEdit = currentUser?.role === "Admin";
+    const canManageVehicles = currentUser?.role === "Admin";
+    const canChangeVehicleStatus =
+      currentUser?.role === "Admin" ||
+      currentUser?.role === "Inspector";
 
     switch (page) {
       case "adminDashboard":
@@ -123,7 +127,12 @@ function App() {
       case "driverDashboard":
         return <DriverDashboard currentUser={currentUser} onNavigate={handlePageChange} />;
       case "vehicles":
-        return <VehiclesPage canEdit={canEdit} />;
+        return (
+          <VehiclesPage
+            canManageVehicles={canManageVehicles}
+            canChangeVehicleStatus={canChangeVehicleStatus}
+          />
+        );
       case "drivers":
         return <DriversPage />;
       case "busRoutes":

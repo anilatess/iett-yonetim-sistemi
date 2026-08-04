@@ -5,5 +5,6 @@ namespace IETT.DataAccess.Abstract
 {
     public interface IVehicleDal : IEntityRepository<Vehicle>
     {
+        Task<bool> VehicleStatusExistsAsync(int vehicleStatusId);
     }
 }

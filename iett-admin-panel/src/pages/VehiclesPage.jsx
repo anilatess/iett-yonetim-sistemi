@@ -6,13 +6,17 @@ import {
   deleteVehicle,
   getVehicles,
   updateVehicle,
+  updateVehicleStatus,
 } from "../services/vehicleService";
 import { apiFetch } from "../services/apiClient";
 
 const VEHICLE_STATUS_API_URL =
   "http://localhost:5147/api/VehicleStatuses";
 
-function VehiclesPage({ canEdit = true }) {
+function VehiclesPage({
+  canManageVehicles = false,
+  canChangeVehicleStatus = false,
+}) {
   const [vehicles, setVehicles] = useState([]);
   const [vehicleStatuses, setVehicleStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -200,11 +204,7 @@ function VehiclesPage({ canEdit = true }) {
       ),
     );
 
-    await updateVehicle({
-      id: vehicle.id,
-      doorNumber: vehicle.doorNumber,
-      vehicleStatusId: numericStatusId,
-    });
+    await updateVehicleStatus(vehicle.id, numericStatusId);
   } catch (error) {
     setVehicles(previousVehicles);
 
@@ -219,13 +219,13 @@ function VehiclesPage({ canEdit = true }) {
     <div className="vehicles-page">
       <div className="page-header">
         <div>
-          <h1>{canEdit ? "Araç Yönetimi" : "Araçlar"}</h1>
+          <h1>{canManageVehicles ? "Araç Yönetimi" : "Araçlar"}</h1>
           <p>
-            Veritabanında kayıtlı araçları {canEdit ? "yönetebilirsiniz" : "görüntüleyebilirsiniz"}.
+            Veritabanında kayıtlı araçları {canManageVehicles || canChangeVehicleStatus ? "yönetebilirsiniz" : "görüntüleyebilirsiniz"}.
           </p>
         </div>
 
-        {canEdit && (
+        {canManageVehicles && (
           <button type="button" className="add-button" onClick={openCreateModal}>
             Yeni Araç
           </button>
@@ -252,7 +252,7 @@ function VehiclesPage({ canEdit = true }) {
                 <th>ID</th>
                 <th>Kapı Numarası</th>
                 <th>Durum</th>
-                {canEdit && <th>İşlemler</th>}
+                {canManageVehicles && <th>İşlemler</th>}
               </tr>
             </thead>
 
@@ -263,7 +263,7 @@ function VehiclesPage({ canEdit = true }) {
                   <td>{vehicle.doorNumber}</td>
 
                   <td>
-                    {canEdit ? (
+                    {canChangeVehicleStatus ? (
                       <select
                         className="status-select"
                         value={vehicle.vehicleStatusId}
@@ -285,7 +285,7 @@ function VehiclesPage({ canEdit = true }) {
                     )}
                   </td>
 
-                  {canEdit && <td>
+                  {canManageVehicles && <td>
                     <button
                       type="button"
                       className="edit-button"
@@ -309,7 +309,7 @@ function VehiclesPage({ canEdit = true }) {
         )}
       </div>
 
-      {canEdit && modalOpen && (
+      {canManageVehicles && modalOpen && (
         <div
           className="modal-backdrop"
           onMouseDown={closeModal}
