@@ -84,6 +84,9 @@ builder.Services.AddScoped<IInspectorService, InspectorManager>();
 // Trip servisleri
 builder.Services.AddScoped<ITripService, TripManager>();
 
+// Anonim şikâyet oluşturma servisi
+builder.Services.AddScoped<IPublicComplaintService, PublicComplaintManager>();
+
 // JWT doğrulama ayarları
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(

@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./App.css";
 
 import LoginPage from "./pages/LoginPage";
+import PublicComplaintPage from "./pages/PublicComplaintPage";
 import Sidebar from "./components/layout/Sidebar";
 import VehiclesPage from "./pages/VehiclesPage";
 import DriversPage from "./pages/DriversPage";
@@ -63,6 +64,7 @@ function restoreSelectedRoute() {
 
 function App() {
   const [currentUser, setCurrentUser] = useState(restoreCurrentUser);
+  const [publicPage, setPublicPage] = useState("login");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activePage, setActivePage] = useState(() => {
     const user = restoreCurrentUser();
@@ -176,7 +178,16 @@ function App() {
   }
 
   if (!currentUser) {
-    return <LoginPage onLogin={handleLogin} />;
+    if (publicPage === "complaint") {
+      return <PublicComplaintPage onBackToLogin={() => setPublicPage("login")} />;
+    }
+
+    return (
+      <LoginPage
+        onLogin={handleLogin}
+        onCreateComplaint={() => setPublicPage("complaint")}
+      />
+    );
   }
 
   const safeActivePage = isPageAllowed(currentUser.role, activePage)

@@ -3,7 +3,7 @@ import { login } from "../services/authService";
 import iettLogo from "../assets/iett-logo.png";
 import "./LoginPage.css";
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, onCreateComplaint }) {
   const [form, setForm] = useState({
     userName: "",
     password: "",
@@ -93,6 +93,14 @@ function LoginPage({ onLogin }) {
             disabled={loading}
           >
             {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+          </button>
+
+          <button
+            className="public-complaint-link"
+            type="button"
+            onClick={onCreateComplaint}
+          >
+            Şikâyet Oluştur
           </button>
         </form>
 

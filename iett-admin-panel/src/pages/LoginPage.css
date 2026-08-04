@@ -233,3 +233,18 @@
     border-radius: 16px;
   }
 }
+
+.public-complaint-link {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #2867ad;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #195493;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.public-complaint-link:hover {
+  background: #eff6ff;
+}
