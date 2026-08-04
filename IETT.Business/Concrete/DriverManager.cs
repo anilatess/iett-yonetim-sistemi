@@ -87,10 +87,54 @@ namespace IETT.Business.Concrete
                 return new List<DriverCertificateDto>();
             }
 
+            return await GetCertificateDtosAsync(driverId.Value);
+        }
+
+        public async Task<List<DriverCertificateDto>?> GetCertificatesAsync(
+            int requestingUserId,
+            string role,
+            int driverId)
+        {
+            var drivers = _context.Drivers
+                .AsNoTracking()
+                .Where(driver => driver.Id == driverId);
+
+            if (role == "Inspector")
+            {
+                var garageId = await _context.Inspectors
+                    .AsNoTracking()
+                    .Where(inspector => inspector.UserId == requestingUserId)
+                    .Select(inspector => (int?)inspector.GarageId)
+                    .FirstOrDefaultAsync();
+
+                if (garageId is null)
+                {
+                    return null;
+                }
+
+                drivers = drivers.Where(driver => driver.GarageId == garageId.Value);
+            }
+
+            if (!await drivers.AnyAsync())
+            {
+                return null;
+            }
+
+            return await GetCertificateDtosAsync(driverId);
+        }
+
+        private async Task<List<DriverCertificateDto>> GetCertificateDtosAsync(int driverId)
+        {
             var certificates = await _context.DriverCertificates
                 .AsNoTracking()
-                .Where(certificate => certificate.DriverId == driverId.Value)
+                .Where(certificate => certificate.DriverId == driverId)
                 .OrderBy(certificate => certificate.ExpiryDate)
+                .Select(certificate => new
+                {
+                    certificate.Id,
+                    certificate.CertificateNumber,
+                    certificate.ExpiryDate
+                })
                 .ToListAsync();
 
             var today = DateTime.Today;

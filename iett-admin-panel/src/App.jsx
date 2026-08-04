@@ -134,7 +134,7 @@ function App() {
           />
         );
       case "drivers":
-        return <DriversPage />;
+        return <DriversPage role={currentUser?.role} />;
       case "busRoutes":
         return <BusRoutesPage canEdit={canEdit} onSelectRoute={handleSelectRoute} />;
       case "busStops":

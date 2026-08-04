@@ -11,6 +11,11 @@ namespace IETT.Business.Abstract
 
         Task<List<DriverCertificateDto>> GetMyCertificatesAsync(int userId);
 
+        Task<List<DriverCertificateDto>?> GetCertificatesAsync(
+            int requestingUserId,
+            string role,
+            int driverId);
+
         Task<List<DriverPerformanceDto>> GetMyPerformancesAsync(int userId);
 
         Task<List<DriverTripDto>> GetMyTripsAsync(int userId);

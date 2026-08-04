@@ -1,13 +1,46 @@
 import { useEffect, useMemo, useState } from "react";
 import "./DriversPage.css";
 
-import { getDrivers } from "../services/driverService";
+import { getDriverCertificates, getDrivers } from "../services/driverService";
 
-function DriversPage() {
+const certificateStatuses = {
+  Valid: "Geçerli",
+  ExpiringSoon: "Yakında sona erecek",
+  Expired: "Süresi dolmuş",
+};
+
+function DriversPage({ role }) {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  const [certificates, setCertificates] = useState([]);
+  const [certificatesLoading, setCertificatesLoading] = useState(false);
+  const [certificatesError, setCertificatesError] = useState("");
+
+  async function showCertificates(driver) {
+    setSelectedDriver(driver);
+    setCertificates([]);
+    setCertificatesError("");
+    setCertificatesLoading(true);
+
+    try {
+      setCertificates(await getDriverCertificates(driver.id));
+    } catch (error) {
+      setCertificatesError(
+        error.message || "Sertifikalar yüklenirken bir hata oluştu.",
+      );
+    } finally {
+      setCertificatesLoading(false);
+    }
+  }
+
+  function closeCertificates() {
+    setSelectedDriver(null);
+    setCertificates([]);
+    setCertificatesError("");
+  }
 
   async function loadDrivers() {
     try {
@@ -116,6 +149,7 @@ function DriversPage() {
                 <th>Operatör</th>
                 <th>Durum</th>
                 <th>Tatil Günü</th>
+                <th>İşlem</th>
               </tr>
             </thead>
 
@@ -158,12 +192,57 @@ function DriversPage() {
                   </td>
 
                   <td>{driver.holidayDay}</td>
+                  <td>
+                    {(role === "Admin" || role === "Inspector") && (
+                      <button type="button" className="certificate-button" onClick={() => showCertificates(driver)}>
+                        Sertifikaları Gör
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {selectedDriver && (
+        <div className="certificate-modal-backdrop" role="presentation" onMouseDown={closeCertificates}>
+          <div className="certificate-modal" role="dialog" aria-modal="true" aria-labelledby="certificate-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="certificate-modal-header">
+              <div>
+                <h2 id="certificate-modal-title">Sertifikalar</h2>
+                <p>{selectedDriver.fullName}</p>
+              </div>
+              <button type="button" className="certificate-modal-close" onClick={closeCertificates} aria-label="Kapat">×</button>
+            </div>
+
+            {certificatesLoading ? (
+              <div className="certificate-state">Sertifikalar yükleniyor...</div>
+            ) : certificatesError ? (
+              <div className="certificate-error">{certificatesError}</div>
+            ) : certificates.length === 0 ? (
+              <div className="certificate-state">Bu şoföre ait sertifika kaydı bulunamadı.</div>
+            ) : (
+              <div className="certificate-table-wrapper">
+                <table>
+                  <thead><tr><th>Sertifika Numarası</th><th>Son Geçerlilik Tarihi</th><th>Kalan Gün</th><th>Durum</th></tr></thead>
+                  <tbody>
+                    {certificates.map((certificate) => (
+                      <tr key={certificate.id}>
+                        <td>{certificate.certificateNumber}</td>
+                        <td>{new Date(certificate.expiryDate).toLocaleDateString("tr-TR")}</td>
+                        <td>{certificate.remainingDays}</td>
+                        <td><span className={`certificate-status ${certificate.status}`}>{certificateStatuses[certificate.status] || certificate.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

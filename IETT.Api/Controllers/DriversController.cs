@@ -86,6 +86,40 @@ namespace IETT.Api.Controllers
             return Ok(certificates);
         }
 
+        [HttpGet("{driverId:int}/certificates")]
+        [Authorize(Roles = "Admin,Inspector")]
+        public async Task<IActionResult> GetCertificates(int driverId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var role = User.FindFirstValue(ClaimTypes.Role);
+
+            if (role is not ("Admin" or "Inspector"))
+            {
+                return Forbid();
+            }
+
+            var certificates = await _driverService.GetCertificatesAsync(
+                userId,
+                role,
+                driverId);
+
+            if (certificates is null)
+            {
+                return NotFound(new
+                {
+                    message = "Şoför bulunamadı veya bu şoföre erişim yetkiniz yok."
+                });
+            }
+
+            return Ok(certificates);
+        }
+
         [HttpGet("me/performances")]
         [Authorize(Roles = "Driver")]
         public async Task<IActionResult> GetMyPerformances()
