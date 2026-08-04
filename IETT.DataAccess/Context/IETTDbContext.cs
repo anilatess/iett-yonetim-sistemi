@@ -74,6 +74,27 @@ namespace IETT.DataAccess.Context
                 .Property(trip => trip.TripStatus)
                 .HasConversion<int>();
 
+            // Trip ile BusRoute arasındaki ilişki
+            modelBuilder.Entity<Trip>()
+                .HasOne(trip => trip.BusRoute)
+                .WithMany(route => route.Trips)
+                .HasForeignKey(trip => trip.RouteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Complaint ile BusRoute arasındaki ilişki
+            modelBuilder.Entity<Complaint>()
+                .HasOne(complaint => complaint.BusRoute)
+                .WithMany(route => route.Complaints)
+                .HasForeignKey(complaint => complaint.RouteId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Complaint ile BusStop arasındaki ilişki
+            modelBuilder.Entity<Complaint>()
+                .HasOne(complaint => complaint.BusStop)
+                .WithMany(stop => stop.Complaints)
+                .HasForeignKey(complaint => complaint.StopId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // Vehicle ile VehicleStatus arasındaki ilişki
             modelBuilder.Entity<Vehicle>()
                 .HasOne(vehicle => vehicle.VehicleStatus)
