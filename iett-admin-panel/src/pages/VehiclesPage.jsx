@@ -1,426 +1,104 @@
 import { useEffect, useState } from "react";
 import "./VehiclesPage.css";
-
-import {
-  createVehicle,
-  deleteVehicle,
-  getVehicles,
-  updateVehicle,
-  updateVehicleStatus,
-} from "../services/vehicleService";
+import { createVehicle, deleteVehicle, getVehicles, updateVehicle, updateVehicleStatus } from "../services/vehicleService";
 import { apiFetch } from "../services/apiClient";
 
-const VEHICLE_STATUS_API_URL =
-  "http://localhost:5147/api/VehicleStatuses";
+const STATUS_URL = "http://localhost:5147/api/VehicleStatuses";
+const MODELS = ["OTOKAR/KENT 290LF", "KARSAN/AVANCITY S PLUS"];
+const MIN_YEAR = 1980;
+const MAX_YEAR = new Date().getFullYear() + 1;
+const emptyForm = { doorNumber: "", licensePlate: "", model: "", productionYear: "", capacity: "", vehicleStatusId: 1 };
 
-function VehiclesPage({
-  canManageVehicles = false,
-  canChangeVehicleStatus = false,
-}) {
+function VehiclesPage({ canManageVehicles = false, canChangeVehicleStatus = false }) {
   const [vehicles, setVehicles] = useState([]);
-  const [vehicleStatuses, setVehicleStatuses] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [modalError, setModalError] = useState("");
-
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
-
-  const [formData, setFormData] = useState({
-    doorNumber: "",
-    vehicleStatusId: 1,
-  });
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyForm);
 
   async function loadVehicles() {
-    try {
-      setLoading(true);
-      setMessage("");
-
-      const data = await getVehicles();
-      setVehicles(data);
-    } catch (error) {
-      setMessage(error.message || "Araçlar getirilemedi.");
-    } finally {
-      setLoading(false);
-    }
+    try { setLoading(true); setMessage(""); setVehicles(await getVehicles()); }
+    catch (error) { setMessage(error.message || "Araçlar getirilemedi."); }
+    finally { setLoading(false); }
   }
-
-  async function loadVehicleStatuses() {
-    try {
-      const data = await apiFetch(VEHICLE_STATUS_API_URL);
-      setVehicleStatuses(data);
-    } catch (error) {
-      setMessage(
-        error.message || "Araç durumları getirilemedi.",
-      );
-    }
+  async function loadStatuses() {
+    try { setStatuses(await apiFetch(STATUS_URL)); }
+    catch (error) { setMessage(error.message || "Araç durumları getirilemedi."); }
   }
+  useEffect(() => { loadVehicles(); loadStatuses(); }, []);
 
-  useEffect(() => {
-    loadVehicles();
-    loadVehicleStatuses();
-  }, []);
-
-  function openCreateModal() {
-    setModalError("");
-    setEditingVehicle(null);
-
-    setFormData({
-      doorNumber: "",
-      vehicleStatusId:
-        vehicleStatuses.length > 0
-          ? Number(vehicleStatuses[0].id)
-          : 1,
-    });
-
+  function openCreate() {
+    setEditing(null); setModalError("");
+    setForm({ ...emptyForm, vehicleStatusId: Number(statuses[0]?.id || 1) }); setModalOpen(true);
+  }
+  function openEdit(vehicle) {
+    setEditing(vehicle); setModalError("");
+    setForm({ doorNumber: vehicle.doorNumber, licensePlate: vehicle.licensePlate, model: vehicle.model, productionYear: String(vehicle.productionYear), capacity: String(vehicle.capacity), vehicleStatusId: Number(vehicle.vehicleStatusId) });
     setModalOpen(true);
   }
+  function closeModal() { if (!submitting) { setModalOpen(false); setEditing(null); setModalError(""); } }
+  function change({ target: { name, value } }) { setForm((old) => ({ ...old, [name]: name === "vehicleStatusId" ? Number(value) : value })); }
 
-  function openEditModal(vehicle) {
-    setModalError("");
-    setEditingVehicle(vehicle);
-
-    setFormData({
-      doorNumber: vehicle.doorNumber,
-      vehicleStatusId: Number(vehicle.vehicleStatusId),
-    });
-
-    setModalOpen(true);
+  function validationError() {
+    if (!form.doorNumber.trim()) return "Kapı numarası boş bırakılamaz.";
+    if (!form.licensePlate.trim()) return "Plaka boş bırakılamaz.";
+    if (!form.model.trim()) return "Model boş bırakılamaz.";
+    const capacity = Number(form.capacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 300) return "Kapasite 1 ile 300 arasında olmalıdır.";
+    const year = Number(form.productionYear);
+    if (!Number.isInteger(year) || year < MIN_YEAR || year > MAX_YEAR) return `Üretim yılı ${MIN_YEAR} ile ${MAX_YEAR} arasında olmalıdır.`;
+    if (!form.vehicleStatusId) return "Araç durumu seçilmelidir.";
+    return "";
   }
-
-  function closeModal() {
-    setModalOpen(false);
-    setEditingVehicle(null);
-    setModalError("");
-  }
-
-  function handleInputChange(event) {
-    const { name, value } = event.target;
-
-    setFormData((current) => ({
-      ...current,
-      [name]:
-        name === "vehicleStatusId"
-          ? Number(value)
-          : value,
-    }));
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    if (!formData.doorNumber.trim()) {
-      setModalError("Kapı numarası boş bırakılamaz.");
-      return;
-    }
-
-    if (!formData.vehicleStatusId) {
-      setModalError("Araç durumu seçilmelidir.");
-      return;
-    }
-
+  async function submit(event) {
+    event.preventDefault(); const error = validationError();
+    if (error) { setModalError(error); return; }
+    const payload = { doorNumber: form.doorNumber.trim(), licensePlate: form.licensePlate.trim(), model: form.model.trim(), productionYear: Number(form.productionYear), capacity: Number(form.capacity), vehicleStatusId: Number(form.vehicleStatusId) };
     try {
-      setModalError("");
-
-      if (editingVehicle) {
-        await updateVehicle({
-          id: editingVehicle.id,
-          doorNumber: formData.doorNumber.trim(),
-          vehicleStatusId: formData.vehicleStatusId,
-        });
-      } else {
-        await createVehicle({
-          doorNumber: formData.doorNumber.trim(),
-          vehicleStatusId: formData.vehicleStatusId,
-        });
-      }
-
-      closeModal();
-      await loadVehicles();
-    } catch (error) {
-      setModalError(
-        error.message || "Araç kaydedilirken hata oluştu.",
-      );
-    }
+      setSubmitting(true); setModalError("");
+      if (editing) await updateVehicle({ id: editing.id, ...payload }); else await createVehicle(payload);
+      setModalOpen(false); setEditing(null); await loadVehicles();
+    } catch (submitError) { setModalError(submitError.message || "Araç kaydedilirken hata oluştu."); }
+    finally { setSubmitting(false); }
   }
-
-  async function handleDelete(vehicle) {
-    const confirmed = window.confirm(
-      `${vehicle.doorNumber} numaralı aracı silmek istediğine emin misin?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setMessage("");
-
-      await deleteVehicle(vehicle.id);
-      await loadVehicles();
-    } catch (error) {
-      setMessage(
-        error.message || "Araç silinirken hata oluştu.",
-      );
-    }
+  async function remove(vehicle) {
+    if (!window.confirm(`${vehicle.doorNumber} numaralı aracı silmek istediğinize emin misiniz?`)) return;
+    try { await deleteVehicle(vehicle.id); await loadVehicles(); }
+    catch (error) { setMessage(error.message || "Araç silinirken hata oluştu."); }
   }
-
-  async function handleQuickStatusChange(vehicle, newStatusId) {
-  const numericStatusId = Number(newStatusId);
-
-  // Kullanıcı mevcut durumu tekrar seçtiyse işlem yapma
-  if (numericStatusId === Number(vehicle.vehicleStatusId)) {
-    return;
+  async function changeStatus(vehicle, value) {
+    const id = Number(value); if (id === Number(vehicle.vehicleStatusId)) return;
+    const name = statuses.find((status) => Number(status.id) === id)?.name || "seçilen durum";
+    if (!window.confirm(`${vehicle.doorNumber} numaralı aracın durumunu "${name}" olarak değiştirmek istediğinize emin misiniz?`)) return;
+    const old = vehicles;
+    try { setVehicles((items) => items.map((item) => item.id === vehicle.id ? { ...item, vehicleStatusId: id } : item)); await updateVehicleStatus(vehicle.id, id); }
+    catch (error) { setVehicles(old); setMessage(error.message || "Araç durumu değiştirilemedi."); }
   }
+  const statusName = (id) => statuses.find((status) => Number(status.id) === Number(id))?.name || "-";
 
-  const selectedStatus = vehicleStatuses.find(
-    (status) => Number(status.id) === numericStatusId,
-  );
-
-  const confirmed = window.confirm(
-    `${vehicle.doorNumber} numaralı aracın durumunu ` +
-      `"${selectedStatus?.name || "seçilen durum"}" olarak değiştirmek istediğine emin misin?`,
-  );
-
-  // Vazgeçilirse select, vehicles state değişmediği için eski durumuna döner
-  if (!confirmed) {
-    return;
-  }
-
-  const previousVehicles = vehicles;
-
-  try {
-    setMessage("");
-
-    setVehicles((currentVehicles) =>
-      currentVehicles.map((item) =>
-        item.id === vehicle.id
-          ? {
-              ...item,
-              vehicleStatusId: numericStatusId,
-            }
-          : item,
-      ),
-    );
-
-    await updateVehicleStatus(vehicle.id, numericStatusId);
-  } catch (error) {
-    setVehicles(previousVehicles);
-
-    setMessage(
-      error.message ||
-        "Araç durumu değiştirilirken hata oluştu.",
-    );
-  }
-}
-
-  return (
-    <div className="vehicles-page">
-      <div className="page-header">
-        <div>
-          <h1>{canManageVehicles ? "Araç Yönetimi" : "Araçlar"}</h1>
-          <p>
-            Veritabanında kayıtlı araçları {canManageVehicles || canChangeVehicleStatus ? "yönetebilirsiniz" : "görüntüleyebilirsiniz"}.
-          </p>
-        </div>
-
-        {canManageVehicles && (
-          <button type="button" className="add-button" onClick={openCreateModal}>
-            Yeni Araç
-          </button>
-        )}
-      </div>
-
-      {message && (
-        <div className="alert-message">{message}</div>
-      )}
-
-      <div className="table-card">
-        {loading ? (
-          <div className="table-state">
-            Araçlar yükleniyor...
-          </div>
-        ) : vehicles.length === 0 ? (
-          <div className="table-state">
-            Kayıtlı araç bulunamadı.
-          </div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Kapı Numarası</th>
-                <th>Durum</th>
-                {canManageVehicles && <th>İşlemler</th>}
-              </tr>
-            </thead>
-
-            <tbody>
-              {vehicles.map((vehicle) => (
-                <tr key={vehicle.id}>
-                  <td>{vehicle.id}</td>
-                  <td>{vehicle.doorNumber}</td>
-
-                  <td>
-                    {canChangeVehicleStatus ? (
-                      <select
-                        className="status-select"
-                        value={vehicle.vehicleStatusId}
-                        onChange={(event) => handleQuickStatusChange(vehicle, Number(event.target.value))}
-                        disabled={vehicleStatuses.length === 0}
-                      >
-                        {vehicleStatuses.length === 0 ? (
-                          <option value="">Yükleniyor...</option>
-                        ) : (
-                          vehicleStatuses.map((status) => (
-                            <option key={status.id} value={status.id}>{status.name}</option>
-                          ))
-                        )}
-                      </select>
-                    ) : (
-                      <span className="status-badge">
-                        {vehicleStatuses.find((status) => Number(status.id) === Number(vehicle.vehicleStatusId))?.name || "-"}
-                      </span>
-                    )}
-                  </td>
-
-                  {canManageVehicles && <td>
-                    <button
-                      type="button"
-                      className="edit-button"
-                      onClick={() => openEditModal(vehicle)}
-                    >
-                      Düzenle
-                    </button>
-
-                    <button
-                      type="button"
-                      className="delete-button"
-                      onClick={() => handleDelete(vehicle)}
-                    >
-                      Sil
-                    </button>
-                  </td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {canManageVehicles && modalOpen && (
-        <div
-          className="modal-backdrop"
-          onMouseDown={closeModal}
-        >
-          <div
-            className="modal-card"
-            onMouseDown={(event) =>
-              event.stopPropagation()
-            }
-          >
-            <div className="modal-header">
-              <div>
-                <h2>
-                  {editingVehicle
-                    ? "Aracı Düzenle"
-                    : "Yeni Araç Ekle"}
-                </h2>
-
-                <p>Araç bilgilerini doldurun.</p>
-              </div>
-
-              <button
-                type="button"
-                className="modal-close"
-                onClick={closeModal}
-              >
-                ×
-              </button>
-            </div>
-
-            {modalError && (
-              <div className="modal-error">
-                {modalError}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="doorNumber">
-                  Kapı Numarası
-                </label>
-
-                <input
-                  id="doorNumber"
-                  name="doorNumber"
-                  type="text"
-                  value={formData.doorNumber}
-                  onChange={handleInputChange}
-                  placeholder="Örnek: A-4001"
-                  autoFocus
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="vehicleStatusId">
-                  Araç Durumu
-                </label>
-
-                <select
-                  id="vehicleStatusId"
-                  name="vehicleStatusId"
-                  value={formData.vehicleStatusId}
-                  onChange={handleInputChange}
-                  disabled={
-                    vehicleStatuses.length === 0
-                  }
-                >
-                  {vehicleStatuses.length === 0 ? (
-                    <option value="">
-                      Durumlar yükleniyor...
-                    </option>
-                  ) : (
-                    vehicleStatuses.map((status) => (
-                      <option
-                        key={status.id}
-                        value={status.id}
-                      >
-                        {status.name}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="cancel-button"
-                  onClick={closeModal}
-                >
-                  Vazgeç
-                </button>
-
-                <button
-                  type="submit"
-                  className="save-button"
-                  disabled={
-                    vehicleStatuses.length === 0
-                  }
-                >
-                  {editingVehicle
-                    ? "Değişiklikleri Kaydet"
-                    : "Aracı Kaydet"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+  return <div className="vehicles-page">
+    <div className="page-header"><div><h1>{canManageVehicles ? "Araç Yönetimi" : "Araçlar"}</h1><p>Kayıtlı araç bilgilerini görüntüleyebilirsiniz.</p></div>{canManageVehicles && <button className="add-button" type="button" onClick={openCreate}>Yeni Araç</button>}</div>
+    {message && <div className="alert-message">{message}</div>}
+    <div className="table-card vehicles-table-wrapper">{loading ? <div className="table-state">Araçlar yükleniyor...</div> : vehicles.length === 0 ? <div className="table-state">Kayıtlı araç bulunamadı.</div> :
+      <table><thead><tr><th>Kapı Numarası</th><th>Plaka</th><th>Model</th><th>Üretim Yılı</th><th>Kapasite</th><th>Durum</th>{canManageVehicles && <th>İşlemler</th>}</tr></thead><tbody>{vehicles.map((vehicle) =>
+        <tr key={vehicle.id}><td>{vehicle.doorNumber}</td><td>{vehicle.licensePlate}</td><td>{vehicle.model}</td><td>{vehicle.productionYear}</td><td>{vehicle.capacity}</td><td>{canChangeVehicleStatus ? <select className="status-select" value={vehicle.vehicleStatusId} onChange={(event) => changeStatus(vehicle, event.target.value)} disabled={!statuses.length}>{statuses.map((status) => <option key={status.id} value={status.id}>{status.name}</option>)}</select> : <span className="status-badge">{statusName(vehicle.vehicleStatusId)}</span>}</td>{canManageVehicles && <td className="vehicle-actions"><button className="edit-button" type="button" onClick={() => openEdit(vehicle)}>Düzenle</button><button className="delete-button" type="button" onClick={() => remove(vehicle)}>Sil</button></td>}</tr>)}</tbody></table>}
     </div>
-  );
+    {canManageVehicles && modalOpen && <div className="modal-backdrop" onMouseDown={closeModal}><div className="modal-card vehicle-modal" onMouseDown={(event) => event.stopPropagation()}><div className="modal-header"><div><h2>{editing ? "Aracı Düzenle" : "Yeni Araç Ekle"}</h2><p>Araç bilgilerini doldurun.</p></div><button className="modal-close" type="button" onClick={closeModal} disabled={submitting}>×</button></div>{modalError && <div className="modal-error">{modalError}</div>}
+      <form onSubmit={submit}><div className="vehicle-form-grid">
+        <Field label="Kapı Numarası"><input name="doorNumber" value={form.doorNumber} onChange={change} placeholder="A-4001" required autoFocus /></Field>
+        <Field label="Plaka"><input name="licensePlate" value={form.licensePlate} onChange={change} maxLength="20" placeholder="34 IET 101" required /></Field>
+        <Field label="Model" wide><input name="model" list="vehicle-models" value={form.model} onChange={change} maxLength="150" required /><datalist id="vehicle-models">{MODELS.map((model) => <option key={model} value={model} />)}</datalist></Field>
+        <Field label="Üretim Yılı"><input name="productionYear" type="number" min={MIN_YEAR} max={MAX_YEAR} value={form.productionYear} onChange={change} required /></Field>
+        <Field label="Kapasite"><input name="capacity" type="number" min="1" max="300" value={form.capacity} onChange={change} required /></Field>
+        <Field label="Araç Durumu" wide><select name="vehicleStatusId" value={form.vehicleStatusId} onChange={change} disabled={!statuses.length} required>{statuses.map((status) => <option key={status.id} value={status.id}>{status.name}</option>)}</select></Field>
+      </div><div className="modal-actions"><button className="cancel-button" type="button" onClick={closeModal} disabled={submitting}>Vazgeç</button><button className="save-button" type="submit" disabled={submitting || !statuses.length}>{submitting ? "Kaydediliyor..." : editing ? "Değişiklikleri Kaydet" : "Aracı Kaydet"}</button></div></form>
+    </div></div>}
+  </div>;
 }
 
+function Field({ label, wide = false, children }) { return <div className={`form-group${wide ? " vehicle-form-wide" : ""}`}><label>{label}</label>{children}</div>; }
 export default VehiclesPage;

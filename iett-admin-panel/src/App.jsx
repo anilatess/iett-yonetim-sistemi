@@ -17,12 +17,11 @@ import TaskAssignmentPage from "./pages/TaskAssignmentPage";
 import ComplaintsPage from "./pages/ComplaintsPage";
 import InspectionsPage from "./pages/InspectionsPage";
 import UsersPage from "./pages/UsersPage";
-import InspectorTasksPage from "./pages/InspectorTasksPage";
 import InspectorComplaintsPage from "./pages/InspectorComplaintsPage";
+import InspectorCertificatesPage from "./pages/InspectorCertificatesPage";
 import PerformanceEvaluationPage from "./pages/PerformanceEvaluationPage";
 import InvestigationHistoryPage from "./pages/InvestigationHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
-import DriverTasksPage from "./pages/DriverTasksPage";
 import DriverTripsPage from "./pages/DriverTripsPage";
 import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
@@ -155,16 +154,14 @@ function App() {
         return <InspectionsPage />;
       case "users":
         return <UsersPage />;
-      case "inspectorTasks":
-        return <InspectorTasksPage />;
       case "inspectorComplaints":
         return <InspectorComplaintsPage />;
+      case "inspectorCertificates":
+        return <InspectorCertificatesPage />;
       case "performanceEvaluation":
         return <PerformanceEvaluationPage />;
       case "investigationHistory":
         return <InvestigationHistoryPage />;
-      case "driverTasks":
-        return <DriverTasksPage />;
       case "driverTrips":
         return <DriverTripsPage />;
       case "driverComplaints":

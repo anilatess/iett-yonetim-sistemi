@@ -3,6 +3,7 @@ using IETT.Business.Abstract;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.DTOs.Trips;
+using IETT.Entity.DTOs.Certificates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,88 @@ namespace IETT.Api.Controllers
         {
             _inspectorService = inspectorService;
         }
+
+        [HttpGet("me/dashboard")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> GetDashboard()
+        {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized(new { message = "Kullanıcı bilgisi doğrulanamadı." });
+            }
+
+            var result = await _inspectorService.GetDashboardAsync(userId);
+            return ToGarageScopeResult(result.Status, result.Data);
+        }
+
+        [HttpGet("me/certificates")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> GetMyCertificates()
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized(new { message = "Kullanıcı bilgisi doğrulanamadı." });
+
+            var result = await _inspectorService.GetMyCertificatesAsync(userId);
+            return ToGarageScopeResult(result.Status, result.Data);
+        }
+
+        [HttpPut("me/certificates/{certificateId:int}/approve")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> ApproveCertificate(int certificateId)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized(new { message = "Kullanıcı bilgisi doğrulanamadı." });
+
+            var result = await _inspectorService.ApproveCertificateAsync(
+                userId,
+                certificateId);
+            return ToCertificateReviewResult(result);
+        }
+
+        [HttpPut("me/certificates/{certificateId:int}/reject")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> RejectCertificate(
+            int certificateId,
+            RejectDriverCertificateDto dto)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized(new { message = "Kullanıcı bilgisi doğrulanamadı." });
+            if (string.IsNullOrWhiteSpace(dto.RejectionReason))
+                return BadRequest(new { message = "Ret nedeni zorunludur." });
+            if (dto.RejectionReason.Trim().Length > 500)
+                return BadRequest(new { message = "Ret nedeni en fazla 500 karakter olabilir." });
+
+            var result = await _inspectorService.RejectCertificateAsync(
+                userId,
+                certificateId,
+                dto.RejectionReason);
+            return ToCertificateReviewResult(result);
+        }
+
+        private IActionResult ToCertificateReviewResult(
+            InspectorCertificateReviewResult result) => result.Status switch
+        {
+            InspectorCertificateReviewStatus.Success => Ok(result.Certificate),
+            InspectorCertificateReviewStatus.InspectorNotFound => NotFound(new
+            {
+                message = "Denetimci kaydı bulunamadı."
+            }),
+            InspectorCertificateReviewStatus.GarageNotFound => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = "Denetimcinin geçerli bir garaj bağlantısı bulunamadı." }),
+            InspectorCertificateReviewStatus.CertificateNotFound => NotFound(new
+            {
+                message = "Sertifika bulunamadı."
+            }),
+            InspectorCertificateReviewStatus.OutOfGarageScope => StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = "Başka bir garaja ait sertifikaya işlem yapılamaz." }),
+            InspectorCertificateReviewStatus.AlreadyReviewed => Conflict(new
+            {
+                message = "Bu sertifika daha önce işlem görmüş."
+            }),
+            _ => BadRequest(new { message = "Sertifika işlemi tamamlanamadı." })
+        };
 
         [HttpGet("me/drivers")]
         [Authorize(Roles = "Inspector")]

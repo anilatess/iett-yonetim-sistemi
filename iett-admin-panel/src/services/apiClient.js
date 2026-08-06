@@ -7,7 +7,7 @@ export async function apiFetch(url, options = {}) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  if (hasBody && !headers.has("Content-Type")) {
+  if (hasBody && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 

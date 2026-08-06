@@ -93,7 +93,7 @@ export default function InvestigationHistoryPage() {
     <div className="investigation-history-page">
       <div className="page-header">
         <div>
-          <h1>Değerlendirme Geçmişim</h1>
+          <h1>Performans Değerlendirme Geçmişi</h1>
           <p>Şoförler için kaydettiğiniz performans değerlendirmelerini görüntüleyebilirsiniz.</p>
         </div>
       </div>

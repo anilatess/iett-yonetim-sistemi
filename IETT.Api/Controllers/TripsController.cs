@@ -58,6 +58,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Inspector")]
         public async Task<IActionResult> Create(CreateTripDto dto)
         {
             if (!TryGetRequestIdentity(out var userId, out var role))
@@ -79,6 +80,7 @@ namespace IETT.Api.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = "Inspector")]
         public async Task<IActionResult> Update(int id, UpdateTripDto dto)
         {
             if (!TryGetRequestIdentity(out var userId, out var role))

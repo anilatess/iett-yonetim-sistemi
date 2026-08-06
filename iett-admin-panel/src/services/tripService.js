@@ -5,17 +5,3 @@ const API_URL = "http://localhost:5147/api/Trips";
 export async function getTrips() {
   return apiFetch(API_URL);
 }
-
-export async function createTrip(payload) {
-  return apiFetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function updateTrip(id, payload) {
-  return apiFetch(`${API_URL}/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-}

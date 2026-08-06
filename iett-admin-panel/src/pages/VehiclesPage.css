@@ -223,6 +223,19 @@
   }
 }
 
+.vehicle-modal { max-width: 680px; }
+.vehicles-table-wrapper { overflow-x: auto; }
+.vehicles-table-wrapper table { min-width: 980px; }
+.vehicle-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.vehicle-form-wide { grid-column: 1 / -1; }
+.vehicle-actions { white-space: nowrap; }
+
+@media (max-width: 800px) {
+  .vehicle-form-grid { grid-template-columns: 1fr; }
+  .vehicle-form-wide { grid-column: auto; }
+  .vehicle-modal { max-height: calc(100vh - 24px); overflow-y: auto; padding: 20px; }
+}
+
 .route-link {
   padding: 0;
   border: none;

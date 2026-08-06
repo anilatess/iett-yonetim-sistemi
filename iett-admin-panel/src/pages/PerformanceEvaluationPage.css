@@ -1,6 +1,11 @@
+.performance-evaluation-page {
+  width: 100%;
+  min-width: 0;
+}
+
 .performance-form-card {
   width: 100%;
-  max-width: 900px;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 14px;

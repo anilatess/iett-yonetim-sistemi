@@ -1,5 +1,6 @@
 ﻿using IETT.Business.Abstract;
 using IETT.Entity.DTOs.Vehicles;
+using IETT.Business.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -57,12 +58,17 @@ namespace IETT.Api.Controllers
                     new { id = createdVehicle.Id },
                     createdVehicle);
             }
+            catch (VehicleLicensePlateConflictException exception)
+            {
+                return Conflict(new { message = exception.Message });
+            }
+            catch (ArgumentException exception)
+            {
+                return BadRequest(new { message = exception.Message });
+            }
             catch (DbUpdateException)
             {
-                return BadRequest(new
-                {
-                    message = "Geçersiz araç durumu. Gönderilen VehicleStatusId veritabanında bulunamadı."
-                });
+                return Conflict(new { message = "Bu plakaya sahip bir araç zaten mevcut." });
             }
         }
 
@@ -83,12 +89,17 @@ namespace IETT.Api.Controllers
                     message = exception.Message
                 });
             }
+            catch (VehicleLicensePlateConflictException exception)
+            {
+                return Conflict(new { message = exception.Message });
+            }
+            catch (ArgumentException exception)
+            {
+                return BadRequest(new { message = exception.Message });
+            }
             catch (DbUpdateException)
             {
-                return BadRequest(new
-                {
-                    message = "Araç güncellenemedi. VehicleStatusId geçersiz olabilir."
-                });
+                return Conflict(new { message = "Bu plakaya sahip bir araç zaten mevcut." });
             }
         }
 

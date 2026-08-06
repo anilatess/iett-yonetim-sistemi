@@ -2,6 +2,8 @@ using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Trips;
+using IETT.Entity.DTOs.Inspectors;
+using IETT.Entity.DTOs.Certificates;
 
 namespace IETT.Business.Abstract
 {
@@ -29,6 +31,22 @@ namespace IETT.Business.Abstract
 
         public static InspectorGarageScopeResult<T> Failure(
             InspectorGarageScopeStatus status) => new() { Status = status };
+    }
+
+    public enum InspectorCertificateReviewStatus
+    {
+        Success,
+        InspectorNotFound,
+        GarageNotFound,
+        CertificateNotFound,
+        OutOfGarageScope,
+        AlreadyReviewed
+    }
+
+    public class InspectorCertificateReviewResult
+    {
+        public InspectorCertificateReviewStatus Status { get; init; }
+        public InspectorCertificateDto? Certificate { get; init; }
     }
 
     public enum InspectorTripCreationStatus
@@ -123,6 +141,21 @@ namespace IETT.Business.Abstract
 
     public interface IInspectorService
     {
+        Task<InspectorGarageScopeResult<InspectorDashboardDto>> GetDashboardAsync(
+            int userId);
+
+        Task<InspectorGarageScopeResult<List<InspectorCertificateDto>>>
+            GetMyCertificatesAsync(int userId);
+
+        Task<InspectorCertificateReviewResult> ApproveCertificateAsync(
+            int userId,
+            int certificateId);
+
+        Task<InspectorCertificateReviewResult> RejectCertificateAsync(
+            int userId,
+            int certificateId,
+            string rejectionReason);
+
         Task<InspectorGarageScopeResult<List<DriverListDto>>> GetMyDriversAsync(
             int userId);
 

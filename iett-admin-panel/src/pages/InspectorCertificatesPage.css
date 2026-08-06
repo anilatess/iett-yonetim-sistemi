@@ -1,0 +1,22 @@
+.inspector-certificates-page { width: 100%; min-width: 0; }
+.certificate-review-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.certificate-review-summary span { padding: 9px 13px; border: 1px solid #dbeafe; border-radius: 9px; background: #f5f9ff; color: #526477; font-size: 13px; }
+.certificate-review-summary strong { margin-left: 5px; color: #075985; }
+.certificate-review-filters { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: end; gap: 12px; margin-bottom: 18px; padding: 15px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
+.certificate-review-filters label { display: flex; flex-direction: column; gap: 6px; color: #475569; font-size: 12px; font-weight: 700; }
+.certificate-review-filters input, .certificate-review-filters select { min-height: 41px; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
+.certificate-review-filters button { min-height: 41px; padding: 9px 13px; border-radius: 8px; background: #e2e8f0; color: #334155; font-weight: 700; cursor: pointer; }
+.certificate-review-success { margin-bottom: 18px; padding: 12px 14px; border: 1px solid #bbf7d0; border-radius: 9px; background: #f0fdf4; color: #15803d; font-weight: 700; }
+.inspector-certificates-page table { min-width: 1250px; }
+.review-driver { color: #0f172a; font-weight: 700; }
+.approval-badge { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.approval-badge--1 { background: #fef3c7; color: #a16207; }.approval-badge--2 { background: #dcfce7; color: #15803d; }.approval-badge--3 { background: #fee2e2; color: #b91c1c; }
+.rejection-note { display: block; max-width: 220px; margin-top: 6px; color: #b91c1c; white-space: normal; }
+.inspector-certificates-page td a { color: #0369a1; font-weight: 700; text-decoration: none; }
+.certificate-review-actions { display: flex; gap: 7px; }.certificate-review-actions button { padding: 7px 10px; border-radius: 7px; background: #dcfce7; color: #15803d; font-weight: 700; cursor: pointer; }.certificate-review-actions button:last-child { background: #fee2e2; color: #b91c1c; }.certificate-review-actions button:disabled { opacity: .6; cursor: not-allowed; }
+.reviewed-label { color: #94a3b8; font-size: 12px; }
+.review-modal-backdrop { position: fixed; z-index: 1100; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,.58); }
+.review-reject-modal { width: min(520px,100%); padding: 25px; border-radius: 15px; background: #fff; box-shadow: 0 24px 60px rgba(15,23,42,.25); }
+.review-reject-modal h2 { margin: 0 0 5px; color: #0f172a; }.review-reject-modal p { margin: 0 0 18px; color: #64748b; }.review-reject-modal label { display: flex; flex-direction: column; gap: 7px; color: #334155; font-weight: 700; }.review-reject-modal textarea { padding: 11px; border: 1px solid #cbd5e1; border-radius: 9px; resize: vertical; }.review-reject-modal > small { display: block; margin-top: 5px; color: #64748b; text-align: right; }.review-reject-modal > div:last-child { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }.review-reject-modal button { padding: 10px 15px; border-radius: 8px; background: #e2e8f0; font-weight: 700; cursor: pointer; }.review-reject-modal button[type="submit"] { background: #b91c1c; color: #fff; }
+@media (max-width: 900px) { .certificate-review-filters { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .certificate-review-filters { grid-template-columns: 1fr; } .review-reject-modal > div:last-child { flex-direction: column-reverse; } }

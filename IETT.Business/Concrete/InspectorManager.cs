@@ -4,6 +4,8 @@ using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Trips;
+using IETT.Entity.DTOs.Inspectors;
+using IETT.Entity.DTOs.Certificates;
 using IETT.Entity.Entities;
 using IETT.Entity.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +21,290 @@ namespace IETT.Business.Concrete
         {
             _context = context;
         }
+
+        public async Task<InspectorGarageScopeResult<InspectorDashboardDto>>
+            GetDashboardAsync(int userId)
+        {
+            var scope = await GetGarageScopeAsync(userId);
+
+            if (scope.Status != InspectorGarageScopeStatus.Success)
+            {
+                return InspectorGarageScopeResult<InspectorDashboardDto>
+                    .Failure(scope.Status);
+            }
+
+            var garage = await _context.Garages
+                .AsNoTracking()
+                .Where(item => item.Id == scope.GarageId)
+                .Select(item => new InspectorDashboardGarageDto
+                {
+                    GarageId = item.Id,
+                    GarageName = item.GarageName,
+                    TotalDriverCount = item.Drivers.Count
+                })
+                .SingleAsync();
+
+            var now = DateTime.Now;
+            var today = now.Date;
+            var tomorrow = today.AddDays(1);
+            var currentTime = now.TimeOfDay;
+
+            var activeTripData = await _context.Trips
+                .AsNoTracking()
+                .Where(trip => trip.Driver.GarageId == scope.GarageId
+                    && trip.TripDate >= today
+                    && trip.TripDate < tomorrow
+                    && trip.TripStatus != TripStatusEnum.Cancelled
+                    && trip.DepertureTime <= currentTime
+                    && currentTime < trip.ArrivalTime)
+                .OrderBy(trip => trip.ArrivalTime)
+                .Select(trip => new DashboardTripData
+                {
+                    Id = trip.Id,
+                    DriverFullName = trip.Driver.User.FirstName + " "
+                        + trip.Driver.User.LastName,
+                    PersonnelNumber = trip.Driver.PersonnelNumber,
+                    VehicleDoorNumber = trip.Vehicle.DoorNumber,
+                    RouteCode = trip.BusRoute.RouteCode,
+                    RouteName = trip.BusRoute.RouteName,
+                    TripDate = trip.TripDate,
+                    DepertureTime = trip.DepertureTime,
+                    ArrivalTime = trip.ArrivalTime,
+                    TripStatus = trip.TripStatus
+                })
+                .ToListAsync();
+
+            var cancelledTripData = await _context.Trips
+                .AsNoTracking()
+                .Where(trip => trip.Driver.GarageId == scope.GarageId
+                    && trip.TripDate >= today
+                    && trip.TripDate < tomorrow
+                    && trip.TripStatus == TripStatusEnum.Cancelled)
+                .OrderByDescending(trip => trip.DepertureTime)
+                .Select(trip => new DashboardTripData
+                {
+                    Id = trip.Id,
+                    DriverFullName = trip.Driver.User.FirstName + " "
+                        + trip.Driver.User.LastName,
+                    PersonnelNumber = trip.Driver.PersonnelNumber,
+                    VehicleDoorNumber = trip.Vehicle.DoorNumber,
+                    RouteCode = trip.BusRoute.RouteCode,
+                    RouteName = trip.BusRoute.RouteName,
+                    TripDate = trip.TripDate,
+                    DepertureTime = trip.DepertureTime,
+                    ArrivalTime = trip.ArrivalTime,
+                    TripStatus = trip.TripStatus
+                })
+                .ToListAsync();
+
+            var complaints = await _context.Complaints
+                .AsNoTracking()
+                .Where(complaint => complaint.CreatedDate >= today
+                    && complaint.CreatedDate < tomorrow
+                    && complaint.Trip != null
+                    && complaint.Trip.Driver.GarageId == scope.GarageId)
+                .OrderByDescending(complaint => complaint.CreatedDate)
+                .Select(complaint => new InspectorDashboardComplaintDto
+                {
+                    ComplaintId = complaint.Id,
+                    TrackingCode = complaint.TrackingCode,
+                    ComplaintTypeName = complaint.ComplaintType.ComplaintTypeName,
+                    ComplaintDescription = complaint.ComplaintDescription,
+                    CreatedDate = complaint.CreatedDate,
+                    DriverFullName = complaint.Trip == null ? null
+                        : complaint.Trip.Driver.User.FirstName + " "
+                            + complaint.Trip.Driver.User.LastName,
+                    PersonnelNumber = complaint.Trip == null ? null
+                        : complaint.Trip.Driver.PersonnelNumber,
+                    VehicleDoorNumber = complaint.Vehicle.DoorNumber,
+                    RouteCode = complaint.BusRoute.RouteCode,
+                    StatusName = complaint.ComplaintStatus == ComplaintStatusEnum.Pending
+                        ? "Bekliyor"
+                        : complaint.ComplaintStatus == ComplaintStatusEnum.UnderReview
+                            ? "İnceleniyor"
+                            : complaint.ComplaintStatus == ComplaintStatusEnum.Resolved
+                                ? "Çözüldü"
+                                : complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
+                                    ? "Reddedildi"
+                                    : "Bilinmiyor"
+                })
+                .ToListAsync();
+
+            List<InspectorDashboardTripDto> MapTrips(
+                IEnumerable<DashboardTripData> source) => source.Select(trip =>
+                    new InspectorDashboardTripDto
+                    {
+                        TripId = trip.Id,
+                        DriverFullName = trip.DriverFullName,
+                        PersonnelNumber = trip.PersonnelNumber,
+                        VehicleDoorNumber = trip.VehicleDoorNumber,
+                        RouteCode = trip.RouteCode,
+                        RouteName = trip.RouteName,
+                        PlannedDepartureDateTime = trip.TripDate.Date
+                            + trip.DepertureTime,
+                        PlannedArrivalDateTime = trip.TripDate.Date
+                            + trip.ArrivalTime,
+                        TripStatus = trip.TripStatus,
+                        TripStatusName = GetTripStatusName(trip.TripStatus)
+                    }).ToList();
+
+            var dashboard = new InspectorDashboardDto
+            {
+                Garage = garage,
+                ActiveTrips = MapTrips(activeTripData),
+                CancelledTripsToday = MapTrips(cancelledTripData),
+                ComplaintsToday = complaints
+            };
+
+            return InspectorGarageScopeResult<InspectorDashboardDto>.Success(dashboard);
+        }
+
+        private sealed class DashboardTripData
+        {
+            public int Id { get; set; }
+            public string DriverFullName { get; set; } = string.Empty;
+            public string PersonnelNumber { get; set; } = string.Empty;
+            public string VehicleDoorNumber { get; set; } = string.Empty;
+            public string RouteCode { get; set; } = string.Empty;
+            public string RouteName { get; set; } = string.Empty;
+            public DateTime TripDate { get; set; }
+            public TimeSpan DepertureTime { get; set; }
+            public TimeSpan ArrivalTime { get; set; }
+            public TripStatusEnum TripStatus { get; set; }
+        }
+
+        public async Task<InspectorGarageScopeResult<List<InspectorCertificateDto>>>
+            GetMyCertificatesAsync(int userId)
+        {
+            var scope = await GetGarageScopeAsync(userId);
+            if (scope.Status != InspectorGarageScopeStatus.Success)
+            {
+                return InspectorGarageScopeResult<List<InspectorCertificateDto>>
+                    .Failure(scope.Status);
+            }
+
+            var certificates = await _context.DriverCertificates
+                .AsNoTracking()
+                .Where(certificate => certificate.Driver.GarageId == scope.GarageId)
+                .OrderBy(certificate => certificate.ApprovalStatus
+                    == CertificateApprovalStatusEnum.Pending ? 0 : 1)
+                .ThenByDescending(certificate => certificate.Id)
+                .Select(certificate => new InspectorCertificateDto
+                {
+                    CertificateId = certificate.Id,
+                    DriverId = certificate.DriverId,
+                    DriverFullName = certificate.Driver.User.FirstName + " "
+                        + certificate.Driver.User.LastName,
+                    PersonnelNumber = certificate.Driver.PersonnelNumber,
+                    CertificateType = certificate.CertificateType,
+                    CertificateNumber = certificate.CertificateNumber,
+                    IssueDate = certificate.IssueDate,
+                    ExpiryDate = certificate.ExpiryDate,
+                    ApprovalStatus = (int)certificate.ApprovalStatus,
+                    ApprovalStatusName = certificate.ApprovalStatus
+                        == CertificateApprovalStatusEnum.Pending ? "İnceleniyor"
+                        : certificate.ApprovalStatus == CertificateApprovalStatusEnum.Approved
+                            ? "Onaylandı" : "Reddedildi",
+                    RejectionReason = certificate.RejectionReason,
+                    ReviewedDate = certificate.ReviewedDate,
+                    FileUrl = certificate.FilePath,
+                    OriginalFileName = certificate.OriginalFileName,
+                    RemainingDays = EF.Functions.DateDiffDay(
+                        DateTime.Today,
+                        certificate.ExpiryDate)
+                })
+                .ToListAsync();
+
+            return InspectorGarageScopeResult<List<InspectorCertificateDto>>
+                .Success(certificates);
+        }
+
+        public Task<InspectorCertificateReviewResult> ApproveCertificateAsync(
+            int userId,
+            int certificateId) => ReviewCertificateAsync(
+                userId,
+                certificateId,
+                CertificateApprovalStatusEnum.Approved,
+                null);
+
+        public Task<InspectorCertificateReviewResult> RejectCertificateAsync(
+            int userId,
+            int certificateId,
+            string rejectionReason) => ReviewCertificateAsync(
+                userId,
+                certificateId,
+                CertificateApprovalStatusEnum.Rejected,
+                rejectionReason.Trim());
+
+        private async Task<InspectorCertificateReviewResult> ReviewCertificateAsync(
+            int userId,
+            int certificateId,
+            CertificateApprovalStatusEnum newStatus,
+            string? rejectionReason)
+        {
+            var scope = await GetGarageScopeAsync(userId);
+            if (scope.Status == InspectorGarageScopeStatus.InspectorNotFound)
+                return new() { Status = InspectorCertificateReviewStatus.InspectorNotFound };
+            if (scope.Status == InspectorGarageScopeStatus.GarageNotFound)
+                return new() { Status = InspectorCertificateReviewStatus.GarageNotFound };
+
+            var inspectorId = await _context.Inspectors
+                .Where(inspector => inspector.UserId == userId)
+                .Select(inspector => inspector.Id)
+                .SingleAsync();
+            var certificate = await _context.DriverCertificates
+                .Include(item => item.Driver)
+                .FirstOrDefaultAsync(item => item.Id == certificateId);
+
+            if (certificate is null)
+                return new() { Status = InspectorCertificateReviewStatus.CertificateNotFound };
+            if (certificate.Driver.GarageId != scope.GarageId)
+                return new() { Status = InspectorCertificateReviewStatus.OutOfGarageScope };
+            if (certificate.ApprovalStatus != CertificateApprovalStatusEnum.Pending)
+                return new() { Status = InspectorCertificateReviewStatus.AlreadyReviewed };
+
+            certificate.ApprovalStatus = newStatus;
+            certificate.ReviewedByInspectorId = inspectorId;
+            certificate.ReviewedDate = DateTime.Now;
+            certificate.RejectionReason = rejectionReason;
+            await _context.SaveChangesAsync();
+
+            var updated = (await GetCertificateDtoQuery(certificateId).SingleAsync());
+            return new()
+            {
+                Status = InspectorCertificateReviewStatus.Success,
+                Certificate = updated
+            };
+        }
+
+        private IQueryable<InspectorCertificateDto> GetCertificateDtoQuery(
+            int certificateId) => _context.DriverCertificates
+                .AsNoTracking()
+                .Where(certificate => certificate.Id == certificateId)
+                .Select(certificate => new InspectorCertificateDto
+                {
+                    CertificateId = certificate.Id,
+                    DriverId = certificate.DriverId,
+                    DriverFullName = certificate.Driver.User.FirstName + " "
+                        + certificate.Driver.User.LastName,
+                    PersonnelNumber = certificate.Driver.PersonnelNumber,
+                    CertificateType = certificate.CertificateType,
+                    CertificateNumber = certificate.CertificateNumber,
+                    IssueDate = certificate.IssueDate,
+                    ExpiryDate = certificate.ExpiryDate,
+                    ApprovalStatus = (int)certificate.ApprovalStatus,
+                    ApprovalStatusName = certificate.ApprovalStatus
+                        == CertificateApprovalStatusEnum.Pending ? "İnceleniyor"
+                        : certificate.ApprovalStatus == CertificateApprovalStatusEnum.Approved
+                            ? "Onaylandı" : "Reddedildi",
+                    RejectionReason = certificate.RejectionReason,
+                    ReviewedDate = certificate.ReviewedDate,
+                    FileUrl = certificate.FilePath,
+                    OriginalFileName = certificate.OriginalFileName,
+                    RemainingDays = EF.Functions.DateDiffDay(
+                        DateTime.Today,
+                        certificate.ExpiryDate)
+                });
 
         public async Task<InspectorGarageScopeResult<List<DriverListDto>>>
             GetMyDriversAsync(int userId)

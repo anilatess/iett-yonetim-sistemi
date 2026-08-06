@@ -4,6 +4,7 @@ using IETT.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IETT.DataAccess.Migrations
 {
     [DbContext(typeof(IETTDbContext))]
-    partial class IETTDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260806114407_AddDriverCertificateUploadFields")]
+    partial class AddDriverCertificateUploadFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,9 +238,6 @@ namespace IETT.DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ApprovalStatus")
-                        .HasColumnType("int");
-
                     b.Property<string>("CertificateNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -263,21 +263,9 @@ namespace IETT.DataAccess.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("ReviewedByInspectorId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ReviewedDate")
-                        .HasColumnType("datetime2");
-
                     b.HasKey("Id");
 
                     b.HasIndex("DriverId");
-
-                    b.HasIndex("ReviewedByInspectorId");
 
                     b.ToTable("DriverCertificates");
                 });
@@ -564,33 +552,14 @@ namespace IETT.DataAccess.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Capacity")
-                        .HasColumnType("int");
-
                     b.Property<string>("DoorNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LicensePlate")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<int>("ProductionYear")
-                        .HasColumnType("int");
 
                     b.Property<int>("VehicleStatusId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("LicensePlate")
-                        .IsUnique();
 
                     b.HasIndex("VehicleStatusId");
 
@@ -718,14 +687,7 @@ namespace IETT.DataAccess.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("IETT.Entity.Entities.Inspector", "ReviewedByInspector")
-                        .WithMany()
-                        .HasForeignKey("ReviewedByInspectorId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.Navigation("Driver");
-
-                    b.Navigation("ReviewedByInspector");
                 });
 
             modelBuilder.Entity("IETT.Entity.Entities.DriverPerformance", b =>

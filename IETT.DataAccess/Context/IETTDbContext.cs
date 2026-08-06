@@ -74,6 +74,32 @@ namespace IETT.DataAccess.Context
                 .Property(trip => trip.TripStatus)
                 .HasConversion<int>();
 
+            modelBuilder.Entity<DriverCertificate>()
+                .Property(certificate => certificate.CertificateType)
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<DriverCertificate>()
+                .Property(certificate => certificate.FilePath)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<DriverCertificate>()
+                .Property(certificate => certificate.OriginalFileName)
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<DriverCertificate>()
+                .Property(certificate => certificate.ApprovalStatus)
+                .HasConversion<int>();
+
+            modelBuilder.Entity<DriverCertificate>()
+                .Property(certificate => certificate.RejectionReason)
+                .HasMaxLength(500);
+
+            modelBuilder.Entity<DriverCertificate>()
+                .HasOne(certificate => certificate.ReviewedByInspector)
+                .WithMany()
+                .HasForeignKey(certificate => certificate.ReviewedByInspectorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // Trip ile BusRoute arasındaki ilişki
             modelBuilder.Entity<Trip>()
                 .HasOne(trip => trip.BusRoute)
@@ -101,6 +127,18 @@ namespace IETT.DataAccess.Context
                 .WithMany(status => status.Vehicles)
                 .HasForeignKey(vehicle => vehicle.VehicleStatusId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Vehicle>()
+                .Property(vehicle => vehicle.LicensePlate)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Vehicle>()
+                .Property(vehicle => vehicle.Model)
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<Vehicle>()
+                .HasIndex(vehicle => vehicle.LicensePlate)
+                .IsUnique();
 
             // Durak koordinatlarının hassasiyeti
             modelBuilder.Entity<BusStop>()

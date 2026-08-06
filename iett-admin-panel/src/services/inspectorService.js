@@ -2,6 +2,10 @@ import { apiFetch } from "./apiClient";
 
 const API_URL = "http://localhost:5147/api/Inspectors";
 
+export function getInspectorDashboard() {
+  return apiFetch(`${API_URL}/me/dashboard`);
+}
+
 export async function createDriverPerformance(performance) {
   return apiFetch(`${API_URL}/me/performances`, {
     method: "POST",
@@ -38,3 +42,17 @@ export function updateInspectorTrip(tripId, payload) {
 export function cancelInspectorTrip(tripId) {
   return apiFetch(`${API_URL}/me/trips/${tripId}/cancel`, { method: "PUT" });
 }
+
+export const getInspectorCertificates = () =>
+  apiFetch(`${API_URL}/me/certificates`);
+
+export const approveInspectorCertificate = (certificateId) =>
+  apiFetch(`${API_URL}/me/certificates/${certificateId}/approve`, {
+    method: "PUT",
+  });
+
+export const rejectInspectorCertificate = (certificateId, payload) =>
+  apiFetch(`${API_URL}/me/certificates/${certificateId}/reject`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });

@@ -2,6 +2,10 @@ import { apiFetch } from "./apiClient";
 
 const API_URL = "http://localhost:5147/api/Drivers";
 
+export function getDriverDashboard() {
+  return apiFetch(`${API_URL}/me/dashboard`);
+}
+
 export async function getDrivers() {
   return apiFetch(API_URL);
 }
@@ -12,6 +16,13 @@ export async function getMyTrips() {
 
 export async function getMyCertificates() {
   return apiFetch(`${API_URL}/me/certificates`);
+}
+
+export function uploadDriverCertificate(formData) {
+  return apiFetch(`${API_URL}/me/certificates`, {
+    method: "POST",
+    body: formData,
+  });
 }
 
 export async function getDriverCertificates(driverId) {

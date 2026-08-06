@@ -22,5 +22,17 @@ namespace IETT.DataAccess.Concrete
                 .AsNoTracking()
                 .AnyAsync(status => status.Id == vehicleStatusId);
         }
+
+        public async Task<bool> LicensePlateExistsAsync(
+            string licensePlate,
+            int? excludedVehicleId = null)
+        {
+            return await Context.Vehicles
+                .AsNoTracking()
+                .AnyAsync(vehicle =>
+                    vehicle.LicensePlate == licensePlate &&
+                    (!excludedVehicleId.HasValue ||
+                     vehicle.Id != excludedVehicleId.Value));
+        }
     }
 }

@@ -16,13 +16,6 @@
   font-weight: 700;
 }
 
-.trips-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
 .plan-trip-button {
   padding: 11px 17px;
   border-radius: 10px;
@@ -80,17 +73,6 @@
   font-weight: 600;
 }
 
-.trips-success {
-  margin-bottom: 18px;
-  padding: 12px 14px;
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
-  background: #f0fdf4;
-  color: #15803d;
-  font-size: 14px;
-  font-weight: 700;
-}
-
 .trips-table-card {
   overflow: hidden;
   border: 1px solid #e2e8f0;
@@ -105,7 +87,7 @@
 
 .trips-table-card table {
   width: 100%;
-  min-width: 1320px;
+  min-width: 1220px;
   border-collapse: collapse;
 }
 
@@ -179,31 +161,16 @@
   font-weight: 700;
 }
 
-.trip-status-1 {
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.trip-status-2 {
-  background: #fffaeb;
-  color: #b54708;
-}
-
-.trip-status-3 {
-  background: #ecfdf3;
-  color: #15803d;
-}
-
-.trip-status-4 {
-  background: #fef2f2;
-  color: #b42318;
-}
+.trip-status-1 { background: #dbeafe; color: #1d4ed8; }
+.trip-status-2 { background: #fef3c7; color: #a16207; }
+.trip-status-3 { background: #dcfce7; color: #15803d; }
+.trip-status-4 { background: #fee2e2; color: #b91c1c; }
 
 .trips-state {
-  padding: 48px 20px;
+  padding: 52px 20px;
   color: #64748b;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .trip-modal-backdrop {
@@ -237,17 +204,8 @@
   margin-bottom: 22px;
 }
 
-.trip-modal-header h2 {
-  margin: 0 0 5px;
-  color: #0f172a;
-  font-size: 22px;
-}
-
-.trip-modal-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
+.trip-modal-header h2 { margin: 0 0 5px; color: #0f172a; font-size: 22px; }
+.trip-modal-header p { margin: 0; color: #64748b; font-size: 14px; }
 
 .trip-modal-close {
   width: 34px;
@@ -261,14 +219,8 @@
   cursor: pointer;
 }
 
-.trip-modal-close:hover {
-  background: #e2e8f0;
-}
-
-.trip-modal-close:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+.trip-modal-close:hover { background: #e2e8f0; }
+.trip-modal-close:disabled { cursor: not-allowed; opacity: 0.6; }
 
 .trip-form-error {
   margin-bottom: 18px;
@@ -281,11 +233,7 @@
   font-weight: 600;
 }
 
-.trip-form-state {
-  padding: 36px 12px;
-  color: #64748b;
-  text-align: center;
-}
+.trip-form-state { padding: 36px 12px; color: #64748b; text-align: center; }
 
 .trip-form-grid {
   display: grid;
@@ -293,21 +241,9 @@
   gap: 18px;
 }
 
-.trip-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.trip-form-wide {
-  grid-column: 1 / -1;
-}
-
-.trip-form-group label {
-  color: #334155;
-  font-size: 14px;
-  font-weight: 700;
-}
+.trip-form-group { display: flex; flex-direction: column; gap: 8px; }
+.trip-form-wide { grid-column: 1 / -1; }
+.trip-form-group label { color: #334155; font-size: 14px; font-weight: 700; }
 
 .trip-form-group input,
 .trip-form-group select {
@@ -343,64 +279,21 @@
   cursor: pointer;
 }
 
-.trip-cancel-button {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.trip-cancel-button:hover {
-  background: #e2e8f0;
-}
-
-.trip-save-button {
-  background: #0284c7;
-  color: #fff;
-}
-
-.trip-save-button:hover {
-  background: #0369a1;
-}
+.trip-cancel-button { background: #f1f5f9; color: #475569; }
+.trip-cancel-button:hover { background: #e2e8f0; }
+.trip-save-button { background: #0284c7; color: #fff; }
+.trip-save-button:hover { background: #0369a1; }
 
 .trip-cancel-button:disabled,
-.trip-save-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
+.trip-save-button:disabled { cursor: not-allowed; opacity: 0.6; }
 
 @media (max-width: 700px) {
-  .trips-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .trips-header-actions {
-    width: 100%;
-    align-items: stretch;
-    flex-direction: column;
-  }
-
   .trip-count {
-    text-align: center;
+    align-self: flex-start;
   }
 
-  .trip-search {
-    max-width: none;
-  }
-
-  .trip-modal-card {
-    padding: 20px;
-  }
-
-  .trip-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .trip-form-wide {
-    grid-column: auto;
-  }
-
-  .trip-modal-actions {
-    align-items: stretch;
-    flex-direction: column-reverse;
-  }
+  .trip-modal-card { padding: 20px; }
+  .trip-form-grid { grid-template-columns: 1fr; }
+  .trip-form-wide { grid-column: auto; }
+  .trip-modal-actions { align-items: stretch; flex-direction: column-reverse; }
 }
