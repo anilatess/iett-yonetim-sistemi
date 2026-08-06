@@ -6,6 +6,7 @@ using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
 using IETT.Entity.Enums;
+using IETT.Business.Utilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace IETT.Business.Concrete
@@ -58,9 +59,26 @@ namespace IETT.Business.Concrete
                     driver.User.IdentityNumber,
                     driver.Garage.GarageName,
                     driver.Operator.OperatorName,
-                    DriverStatusName = driver.DriverStatus.StatusName
+                    driver.DriverStatusId
                 })
                 .ToListAsync();
+
+            var now = DateTime.Now;
+            var today = now.Date;
+            var currentTime = now.TimeOfDay;
+            var driverIds = driverData.Select(driver => driver.Id).ToList();
+            var activeTripDriverIds = await _context.Trips
+                .AsNoTracking()
+                .Where(trip => driverIds.Contains(trip.DriverId)
+                    && trip.TripStatus != TripStatusEnum.Cancelled
+                    && trip.TripDate.Date == today
+                    && trip.DepertureTime <= currentTime
+                    && currentTime < trip.ArrivalTime)
+                .Select(trip => trip.DriverId)
+                .Distinct()
+                .ToListAsync();
+
+            var activeDriverIds = activeTripDriverIds.ToHashSet();
 
             return driverData.Select(driver => new DriverListDto
             {
@@ -71,7 +89,9 @@ namespace IETT.Business.Concrete
                 PersonnelNumber = driver.PersonnelNumber,
                 GarageName = driver.GarageName,
                 OperatorName = driver.OperatorName,
-                DriverStatusName = driver.DriverStatusName,
+                DriverStatusName = DriverStatusRules.GetEffectiveStatusName(
+                    driver.DriverStatusId,
+                    activeDriverIds.Contains(driver.Id)),
                 HolidayDay = driver.HolidayDay.ToString()
             }).ToList();
         }

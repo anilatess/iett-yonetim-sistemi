@@ -23,3 +23,18 @@ export async function completeInvestigation(id, investigationResult) {
     body: JSON.stringify({ investigationResult }),
   });
 }
+
+export const getInspectorDrivers = () => apiFetch(`${API_URL}/me/drivers`);
+export const getInspectorTrips = () => apiFetch(`${API_URL}/me/trips`);
+
+export function createInspectorTrip(payload) {
+  return apiFetch(`${API_URL}/me/trips`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function updateInspectorTrip(tripId, payload) {
+  return apiFetch(`${API_URL}/me/trips/${tripId}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export function cancelInspectorTrip(tripId) {
+  return apiFetch(`${API_URL}/me/trips/${tripId}/cancel`, { method: "PUT" });
+}

@@ -1,0 +1,16 @@
+.trip-summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+.trip-summary-card { padding: 17px; border: 1px solid #e2e8f0; border-top: 4px solid #64748b; border-radius: 12px; background: #fff; box-shadow: 0 6px 20px rgba(15, 23, 42, .05); }
+.trip-summary-card span { display: block; color: #64748b; font-size: 13px; font-weight: 700; }
+.trip-summary-card strong { display: block; margin-top: 7px; color: #0f172a; font-size: 27px; }
+.summary-blue { border-top-color: #2563eb; } .summary-amber { border-top-color: #d97706; } .summary-green { border-top-color: #16a34a; } .summary-red { border-top-color: #dc2626; }
+.inspector-trip-filters { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: end; gap: 13px; margin-bottom: 20px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; }
+.inspector-trip-filters label { display: flex; flex-direction: column; gap: 7px; color: #475569; font-size: 13px; font-weight: 700; }
+.inspector-trip-filters input, .inspector-trip-filters select { min-height: 42px; padding: 9px 11px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font: inherit; }
+.clear-trip-filters { min-height: 42px; padding: 9px 14px; border-radius: 8px; background: #e2e8f0; color: #334155; font-weight: 700; cursor: pointer; }
+.inspector-trip-table { min-width: 1250px !important; }
+.trip-row-actions { display: flex; gap: 8px; }
+.trip-cancel-action { padding: 8px 12px; border-radius: 8px; background: #fee2e2; color: #b91c1c; font-size: 13px; font-weight: 700; cursor: pointer; }
+.trip-cancel-action:disabled { cursor: not-allowed; opacity: .6; }
+.no-trip-action { color: #94a3b8; font-size: 13px; }
+@media (max-width: 1050px) { .trip-summary-grid { grid-template-columns: repeat(3, 1fr); } .inspector-trip-filters { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 650px) { .trip-summary-grid { grid-template-columns: repeat(2, 1fr); } .inspector-trip-filters { grid-template-columns: 1fr; } .plan-trip-button { width: 100%; } }

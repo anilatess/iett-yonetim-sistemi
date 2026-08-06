@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import DriverDashboard from "./pages/dashboards/DriverDashboard";
 import InspectorDashboard from "./pages/dashboards/InspectorDashboard";
 import TripsPage from "./pages/TripsPage";
+import InspectorTripManagementPage from "./pages/InspectorTripManagementPage";
 import TaskAssignmentPage from "./pages/TaskAssignmentPage";
 import ComplaintsPage from "./pages/ComplaintsPage";
 import InspectionsPage from "./pages/InspectionsPage";
@@ -143,7 +144,9 @@ function App() {
       case "busStops":
         return <BusStopsPage selectedRoute={selectedRoute} onBack={handleBackToRoutes} />;
       case "trips":
-        return <TripsPage />;
+        return currentUser?.role === "Inspector"
+          ? <InspectorTripManagementPage />
+          : <TripsPage />;
       case "taskAssignment":
         return <TaskAssignmentPage />;
       case "complaints":
