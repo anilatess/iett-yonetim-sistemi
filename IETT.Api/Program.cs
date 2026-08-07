@@ -78,6 +78,7 @@ builder.Services.AddDbContext<IETTDbContext>(options =>
 builder.Services.AddScoped<IUserDal, EfUserDal>();
 builder.Services.AddScoped<IAuthService, AuthManager>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
+builder.Services.AddScoped<IUserService, UserManager>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // Araç servisleri

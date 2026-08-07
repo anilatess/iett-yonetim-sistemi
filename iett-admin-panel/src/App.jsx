@@ -21,7 +21,6 @@ import InspectorComplaintsPage from "./pages/InspectorComplaintsPage";
 import InspectorCertificatesPage from "./pages/InspectorCertificatesPage";
 import PerformanceEvaluationPage from "./pages/PerformanceEvaluationPage";
 import InvestigationHistoryPage from "./pages/InvestigationHistoryPage";
-import ProfilePage from "./pages/ProfilePage";
 import DriverTripsPage from "./pages/DriverTripsPage";
 import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
@@ -170,8 +169,6 @@ function App() {
         return <DriverCertificatesPage />;
       case "driverPerformance":
         return <DriverPerformancePage />;
-      case "profile":
-        return <ProfilePage role={currentUser?.role} />;
       default:
         return null;
     }

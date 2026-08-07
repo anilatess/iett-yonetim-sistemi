@@ -28,7 +28,6 @@ export const navigationByRole = {
       ["inspectorCertificates", "📄", "Sertifikalar"],
       ["performanceEvaluation", "📊", "Performans Değerlendirme"],
       ["investigationHistory", "🕘", "Performans Değerlendirme Geçmişi"],
-      ["profile", "👤", "Profilim"],
     ],
     additionalPages: ["busStops"],
   },
@@ -41,7 +40,6 @@ export const navigationByRole = {
       ["driverComplaints", "💬", "Şikâyetlerim"],
       ["driverCertificates", "📄", "Sertifikalarım"],
       ["driverPerformance", "📊", "Performansım"],
-      ["profile", "👤", "Profilim"],
     ],
   },
 };
