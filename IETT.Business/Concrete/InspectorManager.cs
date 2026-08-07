@@ -126,7 +126,9 @@ namespace IETT.Business.Concrete
                                 ? "Çözüldü"
                                 : complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
                                     ? "Reddedildi"
-                                    : "Bilinmiyor"
+                                    : complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                                        ? "Şoföre İletildi"
+                                        : "Bilinmiyor"
                 })
                 .ToListAsync();
 
@@ -936,6 +938,16 @@ namespace IETT.Business.Concrete
                     InvestigationCreatedDate = investigation.CreatedDate,
                     ClosedDate = investigation.ClosedDate,
                     Status = investigation.ClosedDate.HasValue ? "Tamamlandı" : "Devam Ediyor",
+                    ComplaintStatus = (int)investigation.Complaint.ComplaintStatus,
+                    ComplaintStatusName = investigation.Complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                        ? "Şoföre İletildi"
+                        : investigation.Complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
+                            ? "Reddedildi"
+                            : investigation.Complaint.ComplaintStatus == ComplaintStatusEnum.UnderReview
+                                ? "Denetimci İncelemesinde"
+                                : investigation.Complaint.ComplaintStatus == ComplaintStatusEnum.Resolved
+                                    ? "Çözüldü"
+                                    : "Beklemede",
                     DriverId = investigation.Complaint.Trip == null
                         ? null
                         : investigation.Complaint.Trip.DriverId,
@@ -968,10 +980,23 @@ namespace IETT.Business.Concrete
                 .ToListAsync();
         }
 
-        public async Task<InvestigationCompletionStatus> CompleteInvestigationAsync(
+        public async Task<InvestigationDecisionResult> CompleteInvestigationAsync(
             int userId,
             int investigationId,
             CompleteInvestigationDto dto)
+        {
+            return await DecideInvestigationAsync(userId, investigationId,
+                new InvestigationDecisionDto
+                {
+                    Decision = "Approved",
+                    Result = dto.InvestigationResult
+                });
+        }
+
+        public async Task<InvestigationDecisionResult> DecideInvestigationAsync(
+            int userId,
+            int investigationId,
+            InvestigationDecisionDto dto)
         {
             var inspectorId = await _context.Inspectors
                 .AsNoTracking()
@@ -981,42 +1006,74 @@ namespace IETT.Business.Concrete
 
             if (inspectorId is null)
             {
-                return InvestigationCompletionStatus.NotFound;
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InspectorNotFound);
             }
 
             var investigation = await _context.Investigations
                 .Include(item => item.Complaint)
-                .FirstOrDefaultAsync(item =>
-                    item.Id == investigationId
-                    && item.InspectorId == inspectorId.Value);
+                    .ThenInclude(complaint => complaint.Trip)
+                        .ThenInclude(trip => trip!.Driver)
+                .Include(item => item.Complaint)
+                    .ThenInclude(complaint => complaint.ComplaintType)
+                .FirstOrDefaultAsync(item => item.Id == investigationId);
 
             if (investigation is null)
             {
-                return InvestigationCompletionStatus.NotFound;
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InvestigationNotFound);
+            }
+
+            if (investigation.InspectorId != inspectorId.Value)
+            {
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.NotAssigned);
             }
 
             if (investigation.ClosedDate.HasValue)
             {
-                return InvestigationCompletionStatus.AlreadyCompleted;
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.AlreadyCompleted);
             }
 
-            investigation.InvestigationResult = dto.InvestigationResult.Trim();
-            investigation.ClosedDate = DateTime.Now;
-
-            var hasAnotherOpenInvestigation = await _context.Investigations
-                .AsNoTracking()
-                .AnyAsync(item =>
-                    item.ComplaintId == investigation.ComplaintId
-                    && item.Id != investigation.Id
-                    && !item.ClosedDate.HasValue);
-
-            if (!hasAnotherOpenInvestigation)
+            if (dto.Decision == "Approved")
             {
-                investigation.Complaint.ComplaintStatus = ComplaintStatusEnum.Resolved;
+                if (!investigation.Complaint.TripId.HasValue || investigation.Complaint.Trip is null)
+                {
+                    return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.MissingTrip);
+                }
+
+                var driverExists = await _context.Drivers
+                    .AsNoTracking()
+                    .AnyAsync(driver => driver.Id == investigation.Complaint.Trip.DriverId);
+
+                if (!driverExists)
+                {
+                    return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.MissingDriver);
+                }
             }
+
+            var closedDate = DateTime.Now;
+            investigation.InvestigationResult = dto.Result.Trim();
+            investigation.ClosedDate = closedDate;
+            investigation.Complaint.ComplaintStatus = dto.Decision == "Approved"
+                ? ComplaintStatusEnum.ForwardedToDriver
+                : ComplaintStatusEnum.Rejected;
 
             await _context.SaveChangesAsync();
-            return InvestigationCompletionStatus.Completed;
+
+            return new InvestigationDecisionResult
+            {
+                Status = InvestigationCompletionStatus.Completed,
+                Notification = dto.Decision == "Approved"
+                    ? new ComplaintForwardedNotificationDto
+                    {
+                        DriverUserId = investigation.Complaint.Trip!.Driver.UserId,
+                        ComplaintId = investigation.Complaint.Id,
+                        TrackingCode = investigation.Complaint.TrackingCode,
+                        ComplaintTypeName = investigation.Complaint.ComplaintType.ComplaintTypeName,
+                        Message = $"{investigation.Complaint.TrackingCode} takip kodlu şikâyet tarafınıza iletildi.",
+                        ApprovedDate = closedDate,
+                        StatusName = "Şoföre İletildi"
+                    }
+                    : null
+            };
         }
     }
 }

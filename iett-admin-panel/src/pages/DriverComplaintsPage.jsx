@@ -37,7 +37,7 @@ function formatTime(value) {
   return value ? String(value).slice(0, 5) : "-";
 }
 
-export default function DriverComplaintsPage() {
+export default function DriverComplaintsPage({ refreshKey = 0 }) {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,6 +46,8 @@ export default function DriverComplaintsPage() {
     let isActive = true;
 
     async function loadComplaints() {
+      setLoading(true);
+      setError("");
       try {
         const data = await getMyComplaints();
 
@@ -71,7 +73,7 @@ export default function DriverComplaintsPage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="driver-complaints-page">

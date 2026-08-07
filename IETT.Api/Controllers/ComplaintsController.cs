@@ -63,7 +63,9 @@ namespace IETT.Api.Controllers
                             ? "İnceleniyor"
                             : complaint.ComplaintStatus == ComplaintStatusEnum.Resolved
                                 ? "Çözüldü"
-                                : "Reddedildi",
+                                : complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                                    ? "Şoföre İletildi"
+                                    : "Reddedildi",
                     RouteId = complaint.RouteId,
                     RouteCode = complaint.BusRoute.RouteCode,
                     RouteName = complaint.BusRoute.RouteName,

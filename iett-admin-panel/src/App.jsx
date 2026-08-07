@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import * as signalR from "@microsoft/signalr";
 import "./App.css";
 
 import LoginPage from "./pages/LoginPage";
@@ -25,6 +26,8 @@ import DriverTripsPage from "./pages/DriverTripsPage";
 import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
 import DriverComplaintsPage from "./pages/DriverComplaintsPage";
+import ComplaintNotificationToast from "./components/common/ComplaintNotificationToast";
+import { API_BASE_URL } from "./config/apiConfig";
 import {
   getStartPage,
   isPageAllowed,
@@ -74,6 +77,43 @@ function App() {
       : getStartPage(user?.role);
   });
   const [selectedRoute, setSelectedRoute] = useState(restoreSelectedRoute);
+  const [complaintNotification, setComplaintNotification] = useState(null);
+  const [complaintsRefreshKey, setComplaintsRefreshKey] = useState(0);
+
+  const closeComplaintNotification = useCallback(() => {
+    setComplaintNotification(null);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (currentUser?.role !== "Driver" || !token) {
+      return undefined;
+    }
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL}/hubs/notifications`, {
+        accessTokenFactory: () => localStorage.getItem("token") || "",
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    const handleComplaintForwarded = (notification) => {
+      setComplaintNotification(notification);
+      setComplaintsRefreshKey((current) => current + 1);
+    };
+
+    connection.on("ComplaintForwarded", handleComplaintForwarded);
+    connection.start().catch((error) => {
+      console.error("Bildirim bağlantısı kurulamadı.", error);
+    });
+
+    return () => {
+      connection.off("ComplaintForwarded", handleComplaintForwarded);
+      connection.stop().catch(() => {});
+    };
+  }, [currentUser]);
 
   function handleLogin(userData) {
     const startPage = getStartPage(userData.role);
@@ -86,6 +126,7 @@ function App() {
   }
 
   function handleLogout() {
+    setComplaintNotification(null);
     setCurrentUser(null);
     setActivePage("adminDashboard");
     setSelectedRoute(null);
@@ -164,7 +205,7 @@ function App() {
       case "driverTrips":
         return <DriverTripsPage />;
       case "driverComplaints":
-        return <DriverComplaintsPage />;
+        return <DriverComplaintsPage refreshKey={complaintsRefreshKey} />;
       case "driverCertificates":
         return <DriverCertificatesPage />;
       case "driverPerformance":
@@ -212,6 +253,15 @@ function App() {
 
         {renderPage(safeActivePage)}
       </main>
+
+      <ComplaintNotificationToast
+        notification={complaintNotification}
+        onClose={closeComplaintNotification}
+        onOpen={() => {
+          closeComplaintNotification();
+          handlePageChange("driverComplaints");
+        }}
+      />
     </div>
   );
 }

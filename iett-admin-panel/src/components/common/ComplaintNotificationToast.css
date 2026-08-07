@@ -1,0 +1,56 @@
+.complaint-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  width: min(390px, calc(100vw - 32px));
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(135deg, #0b5cab, #1684d6);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 16px 38px rgba(9, 61, 113, 0.3);
+}
+
+.complaint-notification__body {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  padding: 16px 18px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.complaint-notification__eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.complaint-notification__close {
+  align-self: flex-start;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 1.35rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.complaint-notification button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -4px;
+}
+
+@media (max-width: 600px) {
+  .complaint-notification {
+    top: 16px;
+    right: 16px;
+  }
+}

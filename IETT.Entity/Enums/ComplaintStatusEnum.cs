@@ -5,6 +5,7 @@
         Pending = 1,
         UnderReview = 2,
         Resolved = 3,
-        Rejected = 4
+        Rejected = 4,
+        ForwardedToDriver = 5
     }
 }

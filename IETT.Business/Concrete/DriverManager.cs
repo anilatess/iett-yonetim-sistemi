@@ -103,7 +103,9 @@ namespace IETT.Business.Concrete
                                 ? "Çözüldü"
                                 : complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
                                     ? "Reddedildi"
-                                    : "Bilinmiyor",
+                                    : complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                                        ? "Şoföre İletildi"
+                                        : "Bilinmiyor",
                     RouteCode = complaint.BusRoute.RouteCode,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     TripId = complaint.TripId!.Value
@@ -490,7 +492,10 @@ namespace IETT.Business.Concrete
                 .Where(complaint =>
                     complaint.TripId.HasValue
                     && complaint.Trip != null
-                    && complaint.Trip.DriverId == driverId.Value)
+                    && complaint.Trip.DriverId == driverId.Value
+                    && complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                    && complaint.Investigations.Any(investigation =>
+                        investigation.ClosedDate.HasValue))
                 .OrderByDescending(complaint => complaint.CreatedDate)
                 .Select(complaint => new DriverComplaintDto
                 {
@@ -500,6 +505,8 @@ namespace IETT.Business.Concrete
                         complaint.ComplaintType.ComplaintTypeName,
                     ComplaintDescription = complaint.ComplaintDescription,
                     ComplaintCreatedDate = complaint.CreatedDate,
+                    ComplaintDate = complaint.ComplaintDate,
+                    ComplaintTime = complaint.ComplaintTime,
                     ComplaintStatus = complaint.ComplaintStatus,
                     ComplaintStatusName =
                         complaint.ComplaintStatus == ComplaintStatusEnum.Pending
@@ -510,7 +517,9 @@ namespace IETT.Business.Concrete
                                     ? "Çözüldü"
                                     : complaint.ComplaintStatus == ComplaintStatusEnum.Rejected
                                         ? "Reddedildi"
-                                        : "Bilinmiyor",
+                                        : complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
+                                            ? "Şoföre İletildi"
+                                            : "Bilinmiyor",
                     TripId = complaint.Trip!.Id,
                     TripDate = complaint.Trip!.TripDate,
                     DepertureTime = complaint.Trip.DepertureTime,

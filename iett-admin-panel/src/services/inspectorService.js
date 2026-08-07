@@ -21,10 +21,10 @@ export async function getMyInvestigations() {
   return apiFetch(`${API_URL}/me/investigations`);
 }
 
-export async function completeInvestigation(id, investigationResult) {
-  return apiFetch(`${API_URL}/me/investigations/${id}/complete`, {
+export async function decideInvestigation(id, decision, result) {
+  return apiFetch(`${API_URL}/me/investigations/${id}/decision`, {
     method: "PUT",
-    body: JSON.stringify({ investigationResult }),
+    body: JSON.stringify({ decision, result }),
   });
 }
 

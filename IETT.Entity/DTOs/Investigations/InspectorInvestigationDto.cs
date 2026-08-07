@@ -14,6 +14,8 @@ namespace IETT.Entity.DTOs.Investigations
         public DateTime InvestigationCreatedDate { get; set; }
         public DateTime? ClosedDate { get; set; }
         public string Status { get; set; } = string.Empty;
+        public int ComplaintStatus { get; set; }
+        public string ComplaintStatusName { get; set; } = string.Empty;
         public int? DriverId { get; set; }
         public string? DriverFullName { get; set; }
         public string? PersonnelNumber { get; set; }

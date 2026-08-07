@@ -4,6 +4,8 @@ using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.DTOs.Trips;
 using IETT.Entity.DTOs.Certificates;
+using IETT.Api.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,10 +16,17 @@ namespace IETT.Api.Controllers
     public class InspectorsController : ControllerBase
     {
         private readonly IInspectorService _inspectorService;
+        private readonly IHubContext<NotificationHub> _notificationHub;
+        private readonly ILogger<InspectorsController> _logger;
 
-        public InspectorsController(IInspectorService inspectorService)
+        public InspectorsController(
+            IInspectorService inspectorService,
+            IHubContext<NotificationHub> notificationHub,
+            ILogger<InspectorsController> logger)
         {
             _inspectorService = inspectorService;
+            _notificationHub = notificationHub;
+            _logger = logger;
         }
 
         [HttpGet("me/dashboard")]
@@ -395,21 +404,101 @@ namespace IETT.Api.Controllers
                 return Unauthorized();
             }
 
-            var completionStatus = await _inspectorService
+            var completionResult = await _inspectorService
                 .CompleteInvestigationAsync(userId, id, dto);
 
-            return completionStatus switch
+            await SendComplaintForwardedNotificationAsync(completionResult);
+
+            return completionResult.Status switch
             {
                 InvestigationCompletionStatus.Completed => NoContent(),
                 InvestigationCompletionStatus.AlreadyCompleted => Conflict(new
                 {
                     message = "Bu inceleme görevi daha önce sonuçlandırılmış."
                 }),
+                InvestigationCompletionStatus.InspectorNotFound => NotFound(new
+                {
+                    message = "Denetimci kaydı bulunamadı."
+                }),
+                InvestigationCompletionStatus.NotAssigned => StatusCode(
+                    StatusCodes.Status403Forbidden,
+                    new { message = "Bu inceleme görevi giriş yapan denetimciye atanmamış." }),
+                InvestigationCompletionStatus.MissingTrip => Conflict(new
+                {
+                    message = "Şikâyet bir sefere bağlı olmadığı için şoföre iletilemedi."
+                }),
+                InvestigationCompletionStatus.MissingDriver => Conflict(new
+                {
+                    message = "Şikâyetin bağlı olduğu sefere atanmış şoför bulunamadı."
+                }),
                 _ => NotFound(new
                 {
                     message = "İnceleme görevi bulunamadı."
                 })
             };
+        }
+
+        [HttpPut("me/investigations/{id:int}/decision")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> DecideInvestigation(
+            int id,
+            InvestigationDecisionDto dto)
+        {
+            if (!TryGetUserId(out var userId))
+            {
+                return Unauthorized(new { message = "Kullanıcı bilgisi doğrulanamadı." });
+            }
+
+            var result = await _inspectorService
+                .DecideInvestigationAsync(userId, id, dto);
+
+            await SendComplaintForwardedNotificationAsync(result);
+
+            return result.Status switch
+            {
+                InvestigationCompletionStatus.Completed => NoContent(),
+                InvestigationCompletionStatus.InspectorNotFound => NotFound(new { message = "Denetimci kaydı bulunamadı." }),
+                InvestigationCompletionStatus.InvestigationNotFound => NotFound(new { message = "İnceleme görevi bulunamadı." }),
+                InvestigationCompletionStatus.NotAssigned => StatusCode(StatusCodes.Status403Forbidden,
+                    new { message = "Bu inceleme görevi giriş yapan denetimciye atanmamış." }),
+                InvestigationCompletionStatus.AlreadyCompleted => Conflict(new { message = "Bu inceleme için daha önce karar verilmiş." }),
+                InvestigationCompletionStatus.MissingTrip => Conflict(new { message = "Şikâyet bir sefere bağlı olmadığı için onaylanamaz." }),
+                InvestigationCompletionStatus.MissingDriver => Conflict(new { message = "Şikâyetin bağlı olduğu sefere atanmış şoför bulunamadı." }),
+                _ => BadRequest(new { message = "Karar işlemi tamamlanamadı." })
+            };
+        }
+
+        private async Task SendComplaintForwardedNotificationAsync(
+            InvestigationDecisionResult result)
+        {
+            if (result.Status != InvestigationCompletionStatus.Completed
+                || result.Notification is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var notification = result.Notification;
+                await _notificationHub.Clients
+                    .Group(NotificationGroupNames.ForDriverUser(notification.DriverUserId))
+                    .SendAsync("ComplaintForwarded", new
+                    {
+                        notification.ComplaintId,
+                        notification.TrackingCode,
+                        notification.ComplaintTypeName,
+                        notification.Message,
+                        notification.ApprovedDate,
+                        notification.StatusName
+                    });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "ComplaintForwarded bildirimi gönderilemedi. ComplaintId: {ComplaintId}",
+                    result.Notification.ComplaintId);
+            }
         }
 
         [HttpGet("me/performances")]

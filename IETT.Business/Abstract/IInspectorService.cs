@@ -10,8 +10,21 @@ namespace IETT.Business.Abstract
     public enum InvestigationCompletionStatus
     {
         Completed,
-        NotFound,
-        AlreadyCompleted
+        InspectorNotFound,
+        InvestigationNotFound,
+        NotAssigned,
+        AlreadyCompleted,
+        MissingTrip,
+        MissingDriver
+    }
+
+    public class InvestigationDecisionResult
+    {
+        public InvestigationCompletionStatus Status { get; init; }
+        public ComplaintForwardedNotificationDto? Notification { get; init; }
+
+        public static InvestigationDecisionResult Failure(InvestigationCompletionStatus status) =>
+            new() { Status = status };
     }
 
     public enum InspectorGarageScopeStatus
@@ -188,10 +201,16 @@ namespace IETT.Business.Abstract
             int userId
         );
 
-        Task<InvestigationCompletionStatus> CompleteInvestigationAsync(
+        Task<InvestigationDecisionResult> CompleteInvestigationAsync(
             int userId,
             int investigationId,
             CompleteInvestigationDto dto
+        );
+
+        Task<InvestigationDecisionResult> DecideInvestigationAsync(
+            int userId,
+            int investigationId,
+            InvestigationDecisionDto dto
         );
     }
 }
