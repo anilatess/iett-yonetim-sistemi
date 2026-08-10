@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiClient";
+import { API_URL as API_ROOT } from "../config/apiConfig";
 
-const API_URL = "http://localhost:5147/api/Inspectors";
+const API_URL = `${API_ROOT}/Inspectors`;
 
 export function getInspectorDashboard() {
   return apiFetch(`${API_URL}/me/dashboard`);

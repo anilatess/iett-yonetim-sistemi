@@ -14,7 +14,6 @@ import DriverDashboard from "./pages/dashboards/DriverDashboard";
 import InspectorDashboard from "./pages/dashboards/InspectorDashboard";
 import TripsPage from "./pages/TripsPage";
 import InspectorTripManagementPage from "./pages/InspectorTripManagementPage";
-import TaskAssignmentPage from "./pages/TaskAssignmentPage";
 import ComplaintsPage from "./pages/ComplaintsPage";
 import InspectionsPage from "./pages/InspectionsPage";
 import UsersPage from "./pages/UsersPage";
@@ -27,7 +26,7 @@ import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
 import DriverComplaintsPage from "./pages/DriverComplaintsPage";
 import ComplaintNotificationToast from "./components/common/ComplaintNotificationToast";
-import { API_BASE_URL } from "./config/apiConfig";
+import { NOTIFICATION_HUB_URL } from "./config/apiConfig";
 import {
   getStartPage,
   isPageAllowed,
@@ -92,7 +91,7 @@ function App() {
     }
 
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${API_BASE_URL}/hubs/notifications`, {
+      .withUrl(NOTIFICATION_HUB_URL, {
         accessTokenFactory: () => localStorage.getItem("token") || "",
       })
       .withAutomaticReconnect()
@@ -186,8 +185,6 @@ function App() {
         return currentUser?.role === "Inspector"
           ? <InspectorTripManagementPage />
           : <TripsPage />;
-      case "taskAssignment":
-        return <TaskAssignmentPage />;
       case "complaints":
         return <ComplaintsPage />;
       case "inspections":

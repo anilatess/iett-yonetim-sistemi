@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import "./DriverCertificatesPage.css";
 
 import { getMyCertificates, uploadDriverCertificate } from "../services/driverService";
+import { API_BASE_URL } from "../config/apiConfig";
 
-const API_ORIGIN = "http://localhost:5147";
+const API_ORIGIN = API_BASE_URL;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 const EMPTY_FORM = { certificateType: "", certificateNumber: "", issueDate: "", expiryDate: "", file: null };

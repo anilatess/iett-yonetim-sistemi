@@ -24,7 +24,7 @@ namespace IETT.Entity.DTOs.Complaints
         public string RouteName { get; set; } = string.Empty;
         public int VehicleId { get; set; }
         public string VehicleDoorNumber { get; set; } = string.Empty;
-        public int StopId { get; set; }
+        public int? StopId { get; set; }
         public string StopCode { get; set; } = string.Empty;
         public string StopName { get; set; } = string.Empty;
         public string? InvestigationResult { get; set; }

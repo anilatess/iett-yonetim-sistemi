@@ -72,8 +72,12 @@ namespace IETT.Api.Controllers
                     VehicleId = complaint.VehicleId,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     StopId = complaint.StopId,
-                    StopCode = complaint.BusStop.StopCode,
-                    StopName = complaint.BusStop.StopName,
+                    StopCode = complaint.BusStop != null
+                        ? complaint.BusStop.StopCode
+                        : "Belirtilmedi",
+                    StopName = complaint.BusStop != null
+                        ? complaint.BusStop.StopName
+                        : "Belirtilmedi",
                     TripId = complaint.TripId,
                     TripDate = complaint.Trip != null ? complaint.Trip.TripDate : null,
                     DepertureTime = complaint.Trip != null ? complaint.Trip.DepertureTime : null,

@@ -20,7 +20,6 @@ const adminSections = [
     description: "Hatları ve hatlara bağlı durakları yönetin.",
   },
   { page: "trips", icon: "🗓️", title: "Seferler", description: "Sefer yönetimi ekranına geçin." },
-  { page: "taskAssignment", icon: "📌", title: "Görev Atama", description: "Görev atama ekranına geçin." },
   { page: "complaints", icon: "💬", title: "Şikâyetler", description: "Şikâyet süreçlerini görüntüleyin." },
   { page: "inspections", icon: "🔎", title: "Denetimler", description: "Denetim süreçlerini görüntüleyin." },
   { page: "users", icon: "👥", title: "Kullanıcılar", description: "Kullanıcı yönetimi ekranına geçin." },

@@ -964,8 +964,12 @@ namespace IETT.Business.Concrete
                     RouteCode = investigation.Complaint.BusRoute.RouteCode,
                     RouteName = investigation.Complaint.BusRoute.RouteName,
                     StopId = investigation.Complaint.StopId,
-                    StopCode = investigation.Complaint.BusStop.StopCode,
-                    StopName = investigation.Complaint.BusStop.StopName,
+                    StopCode = investigation.Complaint.BusStop != null
+                        ? investigation.Complaint.BusStop.StopCode
+                        : "Belirtilmedi",
+                    StopName = investigation.Complaint.BusStop != null
+                        ? investigation.Complaint.BusStop.StopName
+                        : "Belirtilmedi",
                     TripId = investigation.Complaint.TripId,
                     TripDate = investigation.Complaint.Trip == null
                         ? null

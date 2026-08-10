@@ -5,8 +5,9 @@ import {
   getInspectorCertificates,
   rejectInspectorCertificate,
 } from "../services/inspectorService";
+import { API_BASE_URL } from "../config/apiConfig";
 
-const API_ORIGIN = "http://localhost:5147";
+const API_ORIGIN = API_BASE_URL;
 const STATUS_NAMES = { 1: "İnceleniyor", 2: "Onaylandı", 3: "Reddedildi" };
 
 function formatDate(value) {

@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import "./VehiclesPage.css";
 import { createVehicle, deleteVehicle, getVehicles, updateVehicle, updateVehicleStatus } from "../services/vehicleService";
 import { apiFetch } from "../services/apiClient";
+import { API_URL } from "../config/apiConfig";
 
-const STATUS_URL = "http://localhost:5147/api/VehicleStatuses";
+const STATUS_URL = `${API_URL}/VehicleStatuses`;
 const MODELS = ["OTOKAR/KENT 290LF", "KARSAN/AVANCITY S PLUS"];
 const MIN_YEAR = 1980;
 const MAX_YEAR = new Date().getFullYear() + 1;

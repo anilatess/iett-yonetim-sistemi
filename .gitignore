@@ -5,3 +5,9 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+
+# Environment files may contain local secrets.
+.env
+.env.*
+!iett-admin-panel/.env.example
+!iett-admin-panel/.env.development

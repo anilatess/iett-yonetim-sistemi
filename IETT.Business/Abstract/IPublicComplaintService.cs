@@ -4,6 +4,8 @@ namespace IETT.Business.Abstract
 {
     public interface IPublicComplaintService
     {
+        Task<List<PublicComplaintTypeDto>> GetComplaintTypesAsync();
+
         Task<PublicComplaintOperationResult> CreateAsync(
             CreatePublicComplaintDto dto);
     }
@@ -29,6 +31,10 @@ namespace IETT.Business.Abstract
     public enum PublicComplaintOperationStatus
     {
         Success,
+        DoorNumberRequired,
+        RouteCodeRequired,
+        VehicleAmbiguous,
+        RouteAmbiguous,
         ComplaintTypeNotFound,
         RouteNotFound,
         VehicleNotFound,
@@ -36,8 +42,8 @@ namespace IETT.Business.Abstract
         TripNotFound,
         TripRouteMismatch,
         TripVehicleMismatch,
-        ComplaintDateRequired,
-        ComplaintTimeRequired,
+        IncidentDateTimeRequired,
+        IncidentDateTimeInFuture,
         DescriptionRequired,
         DescriptionTooLong
     }

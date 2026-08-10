@@ -96,6 +96,7 @@ builder.Services.AddScoped<IDriverService, DriverManager>();
 
 // Inspector servisleri
 builder.Services.AddScoped<IInspectorService, InspectorManager>();
+builder.Services.AddScoped<IInvestigationService, InvestigationManager>();
 
 // Trip servisleri
 builder.Services.AddScoped<ITripService, TripManager>();

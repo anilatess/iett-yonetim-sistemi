@@ -530,8 +530,12 @@ namespace IETT.Business.Concrete
                     VehicleId = complaint.VehicleId,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     StopId = complaint.StopId,
-                    StopCode = complaint.BusStop.StopCode,
-                    StopName = complaint.BusStop.StopName,
+                    StopCode = complaint.BusStop != null
+                        ? complaint.BusStop.StopCode
+                        : "Belirtilmedi",
+                    StopName = complaint.BusStop != null
+                        ? complaint.BusStop.StopName
+                        : "Belirtilmedi",
                     InvestigationResult = complaint.Investigations
                         .Where(investigation => investigation.ClosedDate.HasValue)
                         .OrderByDescending(investigation => investigation.ClosedDate)

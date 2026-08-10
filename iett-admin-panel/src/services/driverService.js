@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiClient";
+import { API_URL as API_ROOT } from "../config/apiConfig";
 
-const API_URL = "http://localhost:5147/api/Drivers";
+const API_URL = `${API_ROOT}/Drivers`;
 
 export function getDriverDashboard() {
   return apiFetch(`${API_URL}/me/dashboard`);

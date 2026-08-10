@@ -140,7 +140,7 @@ namespace IETT.DataAccess.Migrations
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
 
-                    b.Property<int>("StopId")
+                    b.Property<int?>("StopId")
                         .HasColumnType("int");
 
                     b.Property<string>("TrackingCode")
@@ -650,8 +650,7 @@ namespace IETT.DataAccess.Migrations
                     b.HasOne("IETT.Entity.Entities.BusStop", "BusStop")
                         .WithMany("Complaints")
                         .HasForeignKey("StopId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IETT.Entity.Entities.Trip", "Trip")
                         .WithMany("Complaints")

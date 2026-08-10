@@ -17,6 +17,16 @@ namespace IETT.Api.Controllers
             _publicComplaintService = publicComplaintService;
         }
 
+        [HttpGet("types")]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<PublicComplaintTypeDto>>> GetTypes()
+        {
+            var complaintTypes = await _publicComplaintService
+                .GetComplaintTypesAsync();
+
+            return Ok(complaintTypes);
+        }
+
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult<PublicComplaintCreatedDto>> Create(
@@ -35,24 +45,24 @@ namespace IETT.Api.Controllers
         private static string GetErrorMessage(
             PublicComplaintOperationStatus status) => status switch
             {
+                PublicComplaintOperationStatus.DoorNumberRequired =>
+                    "Kapı numarası boş olamaz.",
+                PublicComplaintOperationStatus.RouteCodeRequired =>
+                    "Hat kodu boş olamaz.",
+                PublicComplaintOperationStatus.VehicleNotFound =>
+                    "Belirtilen kapı numarasına ait araç bulunamadı.",
+                PublicComplaintOperationStatus.VehicleAmbiguous =>
+                    "Bu kapı numarasıyla birden fazla araç bulundu. Lütfen sistem yöneticisine başvurunuz.",
+                PublicComplaintOperationStatus.RouteNotFound =>
+                    "Belirtilen hat koduna ait hat bulunamadı.",
+                PublicComplaintOperationStatus.RouteAmbiguous =>
+                    "Bu hat koduyla birden fazla hat bulundu. Lütfen sistem yöneticisine başvurunuz.",
                 PublicComplaintOperationStatus.ComplaintTypeNotFound =>
                     "Geçerli bir şikâyet türü seçiniz.",
-                PublicComplaintOperationStatus.RouteNotFound =>
-                    "Geçerli bir hat seçiniz.",
-                PublicComplaintOperationStatus.VehicleNotFound =>
-                    "Geçerli bir araç seçiniz.",
-                PublicComplaintOperationStatus.StopNotFound =>
-                    "Geçerli bir durak seçiniz.",
-                PublicComplaintOperationStatus.TripNotFound =>
-                    "Belirtilen sefer bulunamadı.",
-                PublicComplaintOperationStatus.TripRouteMismatch =>
-                    "Seçilen hat, belirtilen seferin hattıyla uyuşmuyor.",
-                PublicComplaintOperationStatus.TripVehicleMismatch =>
-                    "Seçilen araç, belirtilen seferin aracıyla uyuşmuyor.",
-                PublicComplaintOperationStatus.ComplaintDateRequired =>
-                    "Şikâyet tarihi zorunludur.",
-                PublicComplaintOperationStatus.ComplaintTimeRequired =>
-                    "Şikâyet saati zorunludur.",
+                PublicComplaintOperationStatus.IncidentDateTimeRequired =>
+                    "Olay tarihi ve saati zorunludur.",
+                PublicComplaintOperationStatus.IncidentDateTimeInFuture =>
+                    "Olay tarihi ve saati gelecekte olamaz.",
                 PublicComplaintOperationStatus.DescriptionRequired =>
                     "Şikâyet açıklaması boş olamaz.",
                 PublicComplaintOperationStatus.DescriptionTooLong =>

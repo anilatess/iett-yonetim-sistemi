@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiClient";
+import { API_URL as API_ROOT } from "../config/apiConfig";
 
-const API_URL = "http://localhost:5147/api/Vehicles";
+const API_URL = `${API_ROOT}/Vehicles`;
 
 export async function getVehicles() {
   return apiFetch(API_URL);

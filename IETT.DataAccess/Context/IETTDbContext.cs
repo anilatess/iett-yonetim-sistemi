@@ -119,6 +119,7 @@ namespace IETT.DataAccess.Context
                 .HasOne(complaint => complaint.BusStop)
                 .WithMany(stop => stop.Complaints)
                 .HasForeignKey(complaint => complaint.StopId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.NoAction);
 
             // Vehicle ile VehicleStatus arasındaki ilişki

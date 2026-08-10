@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:5147/api/Auth";
+import { API_URL as API_ROOT } from "../config/apiConfig";
+
+const API_URL = `${API_ROOT}/Auth`;
 
 export async function login(loginData) {
   const response = await fetch(`${API_URL}/login`, {
