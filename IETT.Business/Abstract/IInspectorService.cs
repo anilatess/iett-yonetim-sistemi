@@ -84,12 +84,52 @@ namespace IETT.Business.Abstract
     {
         public InspectorTripCreationStatus Status { get; init; }
         public InspectorTripListDto? Trip { get; init; }
+        public TripAssignedNotification? Notification { get; init; }
 
-        public static InspectorTripCreationResult Success(InspectorTripListDto trip) =>
-            new() { Status = InspectorTripCreationStatus.Success, Trip = trip };
+        public static InspectorTripCreationResult Success(
+            InspectorTripListDto trip,
+            TripAssignedNotification notification) => new()
+            {
+                Status = InspectorTripCreationStatus.Success,
+                Trip = trip,
+                Notification = notification
+            };
 
         public static InspectorTripCreationResult Failure(
             InspectorTripCreationStatus status) => new() { Status = status };
+    }
+
+    public class TripAssignedNotification
+    {
+        public int DriverUserId { get; init; }
+        public int TripId { get; init; }
+        public string RouteCode { get; init; } = string.Empty;
+        public string VehicleDoorNumber { get; init; } = string.Empty;
+        public DateTime PlannedDepartureDateTime { get; init; }
+    }
+
+    public class PerformanceEvaluatedNotification
+    {
+        public int DriverUserId { get; init; }
+        public int PerformanceId { get; init; }
+        public int Score { get; init; }
+        public DateTime EvaluationDate { get; init; }
+    }
+
+    public class InspectorPerformanceCreationResult
+    {
+        public DriverPerformanceDto? Performance { get; init; }
+        public PerformanceEvaluatedNotification? Notification { get; init; }
+
+        public static InspectorPerformanceCreationResult Success(
+            DriverPerformanceDto performance,
+            PerformanceEvaluatedNotification notification) => new()
+            {
+                Performance = performance,
+                Notification = notification
+            };
+
+        public static InspectorPerformanceCreationResult Failure() => new();
     }
 
     public enum InspectorTripUpdateStatus
@@ -188,7 +228,7 @@ namespace IETT.Business.Abstract
             int userId,
             int tripId);
 
-        Task<DriverPerformanceDto?> CreatePerformanceAsync(
+        Task<InspectorPerformanceCreationResult> CreatePerformanceAsync(
             int userId,
             CreateDriverPerformanceDto dto
         );

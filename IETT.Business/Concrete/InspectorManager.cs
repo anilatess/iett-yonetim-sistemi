@@ -462,6 +462,7 @@ namespace IETT.Business.Concrete
                 .Where(item => item.Id == dto.DriverId)
                 .Select(item => new
                 {
+                    item.UserId,
                     item.GarageId,
                     item.DriverStatusId
                 })
@@ -548,7 +549,16 @@ namespace IETT.Business.Concrete
             await _context.SaveChangesAsync();
 
             var createdTrip = await GetInspectorTripAsync(newTrip.Id);
-            return InspectorTripCreationResult.Success(createdTrip!);
+            return InspectorTripCreationResult.Success(
+                createdTrip!,
+                new TripAssignedNotification
+                {
+                    DriverUserId = driver.UserId,
+                    TripId = createdTrip!.TripId,
+                    RouteCode = createdTrip.RouteCode,
+                    VehicleDoorNumber = createdTrip.VehicleDoorNumber,
+                    PlannedDepartureDateTime = createdTrip.PlannedDepartureDateTime
+                });
         }
 
         public async Task<InspectorTripUpdateResult> UpdateMyTripAsync(
@@ -819,7 +829,7 @@ namespace IETT.Business.Concrete
             _ => "Bilinmiyor"
         };
 
-        public async Task<DriverPerformanceDto?> CreatePerformanceAsync(
+        public async Task<InspectorPerformanceCreationResult> CreatePerformanceAsync(
             int userId,
             CreateDriverPerformanceDto dto)
         {
@@ -837,18 +847,20 @@ namespace IETT.Business.Concrete
 
             if (inspector is null)
             {
-                return null;
+                return InspectorPerformanceCreationResult.Failure();
             }
 
-            var driverExists = await _context.Drivers
+            var driver = await _context.Drivers
                 .AsNoTracking()
-                .AnyAsync(driver =>
+                .Where(driver =>
                     driver.Id == dto.DriverId
-                    && driver.GarageId == inspector.GarageId);
+                    && driver.GarageId == inspector.GarageId)
+                .Select(driver => new { driver.UserId })
+                .FirstOrDefaultAsync();
 
-            if (!driverExists)
+            if (driver is null)
             {
-                return null;
+                return InspectorPerformanceCreationResult.Failure();
             }
 
             var performance = new DriverPerformance
@@ -863,7 +875,7 @@ namespace IETT.Business.Concrete
             _context.DriverPerformances.Add(performance);
             await _context.SaveChangesAsync();
 
-            return new DriverPerformanceDto
+            var performanceDto = new DriverPerformanceDto
             {
                 Id = performance.Id,
                 Score = performance.Score,
@@ -871,6 +883,16 @@ namespace IETT.Business.Concrete
                 EvaluationDate = performance.EvaluationDate,
                 InspectorFullName = inspector.FirstName + " " + inspector.LastName
             };
+
+            return InspectorPerformanceCreationResult.Success(
+                performanceDto,
+                new PerformanceEvaluatedNotification
+                {
+                    DriverUserId = driver.UserId,
+                    PerformanceId = performance.Id,
+                    Score = performance.Score,
+                    EvaluationDate = performance.EvaluationDate
+                });
         }
 
         public async Task<List<InspectorPerformanceHistoryDto>> GetMyPerformancesAsync(

@@ -29,7 +29,7 @@ function getScoreCategory(score) {
   return { key: "low", label: "Düşük" };
 }
 
-export default function DriverPerformancePage() {
+export default function DriverPerformancePage({ refreshKey = 0 }) {
   const [performances, setPerformances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,6 +38,9 @@ export default function DriverPerformancePage() {
     let isActive = true;
 
     async function loadPerformances() {
+      setLoading(true);
+      setError("");
+
       try {
         const data = await getMyPerformances();
 
@@ -63,7 +66,7 @@ export default function DriverPerformancePage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const averageScore = performances.length
     ? performances.reduce((total, performance) => total + performance.score, 0) /

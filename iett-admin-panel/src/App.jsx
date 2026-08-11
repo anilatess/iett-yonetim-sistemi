@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import "./App.css";
 
@@ -26,7 +26,14 @@ import DriverCertificatesPage from "./pages/DriverCertificatesPage";
 import DriverPerformancePage from "./pages/DriverPerformancePage";
 import DriverComplaintsPage from "./pages/DriverComplaintsPage";
 import ComplaintNotificationToast from "./components/common/ComplaintNotificationToast";
+import NotificationCenter from "./components/common/NotificationCenter";
 import { NOTIFICATION_HUB_URL } from "./config/apiConfig";
+import {
+  addNotification,
+  loadNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "./services/notificationStorage";
 import {
   getStartPage,
   isPageAllowed,
@@ -63,6 +70,58 @@ function restoreSelectedRoute() {
   }
 }
 
+function normalizeEntityId(value) {
+  const entityId = Number(value);
+  return Number.isInteger(entityId) && entityId > 0 ? entityId : null;
+}
+
+function normalizeOccurredAt(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function normalizeNotification(type, payload = {}) {
+  const configurations = {
+    ComplaintForwarded: {
+      entityId: normalizeEntityId(payload.complaintId),
+      title: "Yeni Şikâyet",
+      message: payload.message || "Bir şikâyet size iletildi.",
+      occurredAt: normalizeOccurredAt(payload.approvedDate),
+      targetPage: "driverComplaints",
+    },
+    TripAssigned: {
+      entityId: normalizeEntityId(payload.tripId),
+      title: "Yeni Sefer Görevi",
+      message: payload.message || "Yeni bir sefer görevi atandı.",
+      occurredAt: normalizeOccurredAt(payload.plannedDepartureDateTime),
+      targetPage: "driverTrips",
+    },
+    PerformanceEvaluated: {
+      entityId: normalizeEntityId(payload.performanceId),
+      title: "Yeni Performans Değerlendirmesi",
+      message: payload.message || "Yeni bir performans değerlendirmeniz var.",
+      occurredAt: normalizeOccurredAt(payload.evaluationDate),
+      targetPage: "driverPerformance",
+    },
+  };
+  const configuration = configurations[type];
+
+  if (!configuration) return null;
+
+  return {
+    id: configuration.entityId
+      ? `${type}:${configuration.entityId}`
+      : `${type}:missing:${Date.now()}`,
+    type,
+    title: configuration.title,
+    message: String(configuration.message),
+    occurredAt: configuration.occurredAt,
+    isRead: false,
+    targetPage: configuration.targetPage,
+    entityId: configuration.entityId,
+  };
+}
+
 function App() {
   const [currentUser, setCurrentUser] = useState(restoreCurrentUser);
   const [publicPage, setPublicPage] = useState("login");
@@ -76,12 +135,28 @@ function App() {
       : getStartPage(user?.role);
   });
   const [selectedRoute, setSelectedRoute] = useState(restoreSelectedRoute);
-  const [complaintNotification, setComplaintNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const notificationsRef = useRef([]);
+  const [toastQueue, setToastQueue] = useState([]);
   const [complaintsRefreshKey, setComplaintsRefreshKey] = useState(0);
+  const [tripsRefreshKey, setTripsRefreshKey] = useState(0);
+  const [performanceRefreshKey, setPerformanceRefreshKey] = useState(0);
 
   const closeComplaintNotification = useCallback(() => {
-    setComplaintNotification(null);
+    setToastQueue((current) => current.slice(1));
   }, []);
+
+  useEffect(() => {
+    notificationsRef.current = [];
+    setNotifications([]);
+    setToastQueue([]);
+
+    if (currentUser?.role !== "Driver") return;
+
+    const storedNotifications = loadNotifications(currentUser.userId);
+    notificationsRef.current = storedNotifications;
+    setNotifications(storedNotifications);
+  }, [currentUser]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -90,6 +165,8 @@ function App() {
       return undefined;
     }
 
+    const connectionUserId = Number(currentUser.userId);
+    let isActive = true;
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(NOTIFICATION_HUB_URL, {
         accessTokenFactory: () => localStorage.getItem("token") || "",
@@ -98,18 +175,60 @@ function App() {
       .configureLogging(signalR.LogLevel.Warning)
       .build();
 
-    const handleComplaintForwarded = (notification) => {
-      setComplaintNotification(notification);
-      setComplaintsRefreshKey((current) => current + 1);
+    const acceptNotification = (type, payload) => {
+      const activeUser = restoreCurrentUser();
+
+      if (
+        !isActive ||
+        activeUser?.role !== "Driver" ||
+        Number(activeUser.userId) !== connectionUserId
+      ) {
+        return;
+      }
+
+      const notification = normalizeNotification(type, payload);
+      if (!notification) return;
+
+      const result = addNotification(
+        connectionUserId,
+        notificationsRef.current,
+        notification,
+      );
+
+      if (!result.added) return;
+
+      notificationsRef.current = result.notifications;
+      setNotifications(result.notifications);
+      setToastQueue((current) => [...current, notification]);
+
+      if (type === "ComplaintForwarded") {
+        setComplaintsRefreshKey((current) => current + 1);
+      } else if (type === "TripAssigned") {
+        setTripsRefreshKey((current) => current + 1);
+      } else if (type === "PerformanceEvaluated") {
+        setPerformanceRefreshKey((current) => current + 1);
+      }
     };
 
+    const handleComplaintForwarded = (payload) =>
+      acceptNotification("ComplaintForwarded", payload);
+    const handleTripAssigned = (payload) =>
+      acceptNotification("TripAssigned", payload);
+    const handlePerformanceEvaluated = (payload) =>
+      acceptNotification("PerformanceEvaluated", payload);
+
     connection.on("ComplaintForwarded", handleComplaintForwarded);
+    connection.on("TripAssigned", handleTripAssigned);
+    connection.on("PerformanceEvaluated", handlePerformanceEvaluated);
     connection.start().catch((error) => {
       console.error("Bildirim bağlantısı kurulamadı.", error);
     });
 
     return () => {
+      isActive = false;
       connection.off("ComplaintForwarded", handleComplaintForwarded);
+      connection.off("TripAssigned", handleTripAssigned);
+      connection.off("PerformanceEvaluated", handlePerformanceEvaluated);
       connection.stop().catch(() => {});
     };
   }, [currentUser]);
@@ -125,7 +244,9 @@ function App() {
   }
 
   function handleLogout() {
-    setComplaintNotification(null);
+    notificationsRef.current = [];
+    setNotifications([]);
+    setToastQueue([]);
     setCurrentUser(null);
     setActivePage("adminDashboard");
     setSelectedRoute(null);
@@ -152,6 +273,31 @@ function App() {
 
   function handleBackToRoutes() {
     handlePageChange("busRoutes");
+  }
+
+  function handleNotificationOpen(notification) {
+    if (currentUser?.role !== "Driver") return;
+
+    const updatedNotifications = markNotificationRead(
+      currentUser.userId,
+      notificationsRef.current,
+      notification.id,
+    );
+    notificationsRef.current = updatedNotifications;
+    setNotifications(updatedNotifications);
+    setToastQueue((current) => current.filter((item) => item.id !== notification.id));
+    handlePageChange(notification.targetPage);
+  }
+
+  function handleMarkAllNotificationsRead() {
+    if (currentUser?.role !== "Driver") return;
+
+    const updatedNotifications = markAllNotificationsRead(
+      currentUser.userId,
+      notificationsRef.current,
+    );
+    notificationsRef.current = updatedNotifications;
+    setNotifications(updatedNotifications);
   }
 
   function renderPage(page) {
@@ -200,13 +346,13 @@ function App() {
       case "investigationHistory":
         return <InvestigationHistoryPage />;
       case "driverTrips":
-        return <DriverTripsPage />;
+        return <DriverTripsPage refreshKey={tripsRefreshKey} />;
       case "driverComplaints":
         return <DriverComplaintsPage refreshKey={complaintsRefreshKey} />;
       case "driverCertificates":
         return <DriverCertificatesPage />;
       case "driverPerformance":
-        return <DriverPerformancePage />;
+        return <DriverPerformancePage refreshKey={performanceRefreshKey} />;
       default:
         return null;
     }
@@ -240,24 +386,31 @@ function App() {
       />
 
       <main className="content">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={() => setSidebarOpen((current) => !current)}
-        >
-          {sidebarOpen ? "←" : "→"}
-        </button>
+        <div className="app-toolbar">
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((current) => !current)}
+          >
+            {sidebarOpen ? "←" : "→"}
+          </button>
+
+          {currentUser.role === "Driver" && (
+            <NotificationCenter
+              notifications={notifications}
+              onNotificationClick={handleNotificationOpen}
+              onMarkAllRead={handleMarkAllNotificationsRead}
+            />
+          )}
+        </div>
 
         {renderPage(safeActivePage)}
       </main>
 
       <ComplaintNotificationToast
-        notification={complaintNotification}
+        notification={toastQueue[0] || null}
         onClose={closeComplaintNotification}
-        onOpen={() => {
-          closeComplaintNotification();
-          handlePageChange("driverComplaints");
-        }}
+        onOpen={() => toastQueue[0] && handleNotificationOpen(toastQueue[0])}
       />
     </div>
   );

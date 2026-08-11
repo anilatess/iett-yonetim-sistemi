@@ -28,7 +28,7 @@ function formatTime(time) {
   return time ? time.slice(0, 5) : "-";
 }
 
-export default function DriverTripsPage() {
+export default function DriverTripsPage({ refreshKey = 0 }) {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,6 +37,9 @@ export default function DriverTripsPage() {
     let isActive = true;
 
     async function loadTrips() {
+      setLoading(true);
+      setError("");
+
       try {
         const data = await getMyTrips();
 
@@ -59,7 +62,7 @@ export default function DriverTripsPage() {
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="driver-trips-page">

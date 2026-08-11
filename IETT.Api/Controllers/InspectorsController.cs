@@ -150,6 +150,7 @@ namespace IETT.Api.Controllers
 
             if (result.Status == InspectorTripCreationStatus.Success)
             {
+                await SendTripAssignedNotificationAsync(result);
                 return Created("/api/Inspectors/me/trips", result.Trip);
             }
 
@@ -501,6 +502,74 @@ namespace IETT.Api.Controllers
             }
         }
 
+        private async Task SendTripAssignedNotificationAsync(
+            InspectorTripCreationResult result)
+        {
+            if (result.Status != InspectorTripCreationStatus.Success
+                || result.Notification is null)
+            {
+                return;
+            }
+
+            var notification = result.Notification;
+
+            try
+            {
+                await _notificationHub.Clients
+                    .Group(NotificationGroupNames.ForDriverUser(notification.DriverUserId))
+                    .SendAsync("TripAssigned", new
+                    {
+                        notification.TripId,
+                        notification.RouteCode,
+                        notification.VehicleDoorNumber,
+                        notification.PlannedDepartureDateTime,
+                        Message = "Yeni bir sefer görevi atandı."
+                    });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "{EventName} bildirimi gönderilemedi. TripId: {TripId}, DriverUserId: {DriverUserId}",
+                    "TripAssigned",
+                    notification.TripId,
+                    notification.DriverUserId);
+            }
+        }
+
+        private async Task SendPerformanceEvaluatedNotificationAsync(
+            InspectorPerformanceCreationResult result)
+        {
+            if (result.Performance is null || result.Notification is null)
+            {
+                return;
+            }
+
+            var notification = result.Notification;
+
+            try
+            {
+                await _notificationHub.Clients
+                    .Group(NotificationGroupNames.ForDriverUser(notification.DriverUserId))
+                    .SendAsync("PerformanceEvaluated", new
+                    {
+                        notification.PerformanceId,
+                        notification.Score,
+                        notification.EvaluationDate,
+                        Message = "Yeni bir performans değerlendirmeniz var."
+                    });
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(
+                    exception,
+                    "{EventName} bildirimi gönderilemedi. PerformanceId: {PerformanceId}, DriverUserId: {DriverUserId}",
+                    "PerformanceEvaluated",
+                    notification.PerformanceId,
+                    notification.DriverUserId);
+            }
+        }
+
         [HttpGet("me/performances")]
         [Authorize(Roles = "Inspector")]
         public async Task<IActionResult> GetMyPerformances()
@@ -532,15 +601,16 @@ namespace IETT.Api.Controllers
                 return Unauthorized();
             }
 
-            var performance = await _inspectorService
+            var result = await _inspectorService
                 .CreatePerformanceAsync(userId, dto);
 
-            if (performance is null)
+            if (result.Performance is null)
             {
                 return NotFound("Denetimci veya şoför kaydı bulunamadı.");
             }
 
-            return Ok(performance);
+            await SendPerformanceEvaluatedNotificationAsync(result);
+            return Ok(result.Performance);
         }
     }
 }

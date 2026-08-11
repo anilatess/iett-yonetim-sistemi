@@ -19,8 +19,8 @@ export default function ComplaintNotificationToast({ notification, onClose, onOp
         onClick={onOpen}
       >
         <span className="complaint-notification__eyebrow">Yeni bildirim</span>
-        <strong>{notification.trackingCode}</strong>
-        <span>Yeni şikâyet tarafınıza iletildi.</span>
+        <strong>{notification.title}</strong>
+        <span>{notification.message}</span>
       </button>
       <button
         type="button"

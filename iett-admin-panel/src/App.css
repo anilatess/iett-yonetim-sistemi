@@ -45,6 +45,18 @@ button {
     margin-left 0.25s ease;
 }
 
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.app-toolbar .sidebar-toggle {
+  margin-bottom: 0;
+}
+
 .page-header {
   display: flex;
   align-items: center;
