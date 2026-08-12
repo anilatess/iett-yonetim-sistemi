@@ -11,6 +11,10 @@
 .investigation-status.status-open { background: #eff6ff; color: #1d4ed8; }
 .investigation-status.status-4 { background: #fef2f2; color: #b42318; }
 .investigation-status.status-5 { background: #e0f2fe; color: #0369a1; }
+.investigation-status.process-1 { background:#eff6ff;color:#1d4ed8 }
+.investigation-status.process-2 { background:#fff7ed;color:#c2410c }
+.investigation-status.process-3 { background:#f5f3ff;color:#6d28d9 }
+.investigation-status.process-4 { background:#dcfce7;color:#15803d }
 .investigation-detail-button { padding: 8px 13px; border: 0; border-radius: 8px; background: #e0f2fe; color: #0369a1; font-weight: 700; cursor: pointer; }
 .investigation-detail-button:hover { background: #bae6fd; }
 .investigation-modal-backdrop { position: fixed; z-index: 1000; inset: 0; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, .58); backdrop-filter: blur(3px); }
@@ -39,6 +43,8 @@
 .decision-button--reject { background: #dc2626; }
 .decision-button--reject:hover:not(:disabled) { background: #b91c1c; }
 .decision-button:disabled { cursor: wait; opacity: .62; }
+.investigation-waiting,.decision-success{margin:18px 0;padding:13px 15px;border-radius:10px;background:#fff7ed;color:#9a3412;font-weight:700}
+.decision-success{background:#dcfce7;color:#166534}
 
 @media (max-width: 700px) {
   .investigation-modal { padding: 20px; }

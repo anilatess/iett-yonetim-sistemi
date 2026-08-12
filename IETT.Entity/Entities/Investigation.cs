@@ -1,5 +1,7 @@
 ﻿using IETT.Entity.Interfaces;
 
+using IETT.Entity.Enums;
+
 namespace IETT.Entity.Entities
 {
     public class Investigation : BaseEntity, IEntity
@@ -11,6 +13,10 @@ namespace IETT.Entity.Entities
         public string InvestigationTitle { get; set; } = string.Empty;
         public string? InvestigationDescription { get; set; }
         public string? InvestigationResult { get; set; }
+        public string? DriverExplanation { get; set; }
+        public DateTime? DriverExplanationDate { get; set; }
+        public InvestigationProcessStatus ProcessStatus { get; set; }
+            = InvestigationProcessStatus.AwaitingInspectorReview;
 
         public DateTime? ClosedDate { get; set; }
 

@@ -6,8 +6,24 @@ namespace IETT.Business.Abstract
     {
         Task<List<PublicComplaintTypeDto>> GetComplaintTypesAsync();
 
+        Task<PublicComplaintTrackingLookupResult> GetByTrackingCodeAsync(
+            string trackingCode);
+
         Task<PublicComplaintOperationResult> CreateAsync(
             CreatePublicComplaintDto dto);
+    }
+
+    public enum PublicComplaintTrackingLookupStatus
+    {
+        Success,
+        NotFound,
+        DuplicateTrackingCode
+    }
+
+    public class PublicComplaintTrackingLookupResult
+    {
+        public PublicComplaintTrackingLookupStatus Status { get; init; }
+        public PublicComplaintTrackingDto? Complaint { get; init; }
     }
 
     public class PublicComplaintOperationResult
@@ -32,7 +48,6 @@ namespace IETT.Business.Abstract
     {
         Success,
         DoorNumberRequired,
-        RouteCodeRequired,
         VehicleAmbiguous,
         RouteAmbiguous,
         ComplaintTypeNotFound,
@@ -40,6 +55,8 @@ namespace IETT.Business.Abstract
         VehicleNotFound,
         StopNotFound,
         TripNotFound,
+        TripAmbiguous,
+        InspectorNotAvailable,
         TripRouteMismatch,
         TripVehicleMismatch,
         IncidentDateTimeRequired,

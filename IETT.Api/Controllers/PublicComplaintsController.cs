@@ -42,13 +42,30 @@ namespace IETT.Api.Controllers
             return StatusCode(StatusCodes.Status201Created, result.Complaint);
         }
 
+        [HttpGet("{trackingCode}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<PublicComplaintTrackingDto>> Track(
+            string trackingCode)
+        {
+            var result = await _publicComplaintService
+                .GetByTrackingCodeAsync(trackingCode);
+
+            return result.Status switch
+            {
+                PublicComplaintTrackingLookupStatus.Success => Ok(result.Complaint),
+                PublicComplaintTrackingLookupStatus.DuplicateTrackingCode => Conflict(new
+                {
+                    message = "Takip kodu için veri bütünlüğü sorunu bulundu. Lütfen sistem yöneticisine başvurunuz."
+                }),
+                _ => NotFound(new { message = "Takip koduna ait şikâyet bulunamadı." })
+            };
+        }
+
         private static string GetErrorMessage(
             PublicComplaintOperationStatus status) => status switch
             {
                 PublicComplaintOperationStatus.DoorNumberRequired =>
                     "Kapı numarası boş olamaz.",
-                PublicComplaintOperationStatus.RouteCodeRequired =>
-                    "Hat kodu boş olamaz.",
                 PublicComplaintOperationStatus.VehicleNotFound =>
                     "Belirtilen kapı numarasına ait araç bulunamadı.",
                 PublicComplaintOperationStatus.VehicleAmbiguous =>
@@ -57,6 +74,12 @@ namespace IETT.Api.Controllers
                     "Belirtilen hat koduna ait hat bulunamadı.",
                 PublicComplaintOperationStatus.RouteAmbiguous =>
                     "Bu hat koduyla birden fazla hat bulundu. Lütfen sistem yöneticisine başvurunuz.",
+                PublicComplaintOperationStatus.TripNotFound =>
+                    "Araç ve olay zamanı için uygun bir sefer bulunamadı.",
+                PublicComplaintOperationStatus.TripAmbiguous =>
+                    "Araç ve olay zamanı için birden fazla uygun sefer bulundu. Lütfen hat kodunu da giriniz.",
+                PublicComplaintOperationStatus.InspectorNotAvailable =>
+                    "Seferin garajında şikâyetin atanabileceği bir denetimci bulunamadı.",
                 PublicComplaintOperationStatus.ComplaintTypeNotFound =>
                     "Geçerli bir şikâyet türü seçiniz.",
                 PublicComplaintOperationStatus.IncidentDateTimeRequired =>

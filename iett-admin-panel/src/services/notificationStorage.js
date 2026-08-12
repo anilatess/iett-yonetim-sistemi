@@ -1,19 +1,23 @@
-const STORAGE_PREFIX = "iett:driver-notifications:v1:";
+const DRIVER_STORAGE_PREFIX = "iett:driver-notifications:v1:";
+const ROLE_STORAGE_PREFIX = "iett:notifications:v1:";
 const MAX_NOTIFICATIONS = 50;
 const ALLOWED_TYPES = new Set([
   "ComplaintForwarded",
   "TripAssigned",
   "PerformanceEvaluated",
+  "DriverExplanationSubmitted",
 ]);
 
-function getStorageKey(userId) {
+function getStorageKey(userId, role = "Driver") {
   const parsedUserId = Number(userId);
 
   if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
     return null;
   }
 
-  return `${STORAGE_PREFIX}${parsedUserId}`;
+  return role === "Driver"
+    ? `${DRIVER_STORAGE_PREFIX}${parsedUserId}`
+    : `${ROLE_STORAGE_PREFIX}${String(role).toLowerCase()}:${parsedUserId}`;
 }
 
 function isValidNotification(notification) {
@@ -32,8 +36,8 @@ function isValidNotification(notification) {
   );
 }
 
-function saveNotifications(userId, notifications) {
-  const key = getStorageKey(userId);
+function saveNotifications(userId, role, notifications) {
+  const key = getStorageKey(userId, role);
 
   if (!key) return [];
 
@@ -50,8 +54,8 @@ function saveNotifications(userId, notifications) {
   return safeNotifications;
 }
 
-export function loadNotifications(userId) {
-  const key = getStorageKey(userId);
+export function loadNotifications(userId, role) {
+  const key = getStorageKey(userId, role);
 
   if (!key) return [];
 
@@ -68,7 +72,7 @@ export function loadNotifications(userId) {
       .slice(0, MAX_NOTIFICATIONS);
 
     if (safeNotifications.length !== parsed.length) {
-      saveNotifications(userId, safeNotifications);
+      saveNotifications(userId, role, safeNotifications);
     }
 
     return safeNotifications;
@@ -82,7 +86,7 @@ export function loadNotifications(userId) {
   }
 }
 
-export function addNotification(userId, currentNotifications, notification) {
+export function addNotification(userId, role, currentNotifications, notification) {
   if (!isValidNotification(notification)) {
     return { notifications: currentNotifications, added: false };
   }
@@ -95,23 +99,24 @@ export function addNotification(userId, currentNotifications, notification) {
     return { notifications: existing, added: false };
   }
 
-  const notifications = saveNotifications(userId, [notification, ...existing]);
+  const notifications = saveNotifications(userId, role, [notification, ...existing]);
   return { notifications, added: true };
 }
 
-export function markNotificationRead(userId, currentNotifications, notificationId) {
+export function markNotificationRead(userId, role, currentNotifications, notificationId) {
   const notifications = currentNotifications.map((notification) =>
     notification.id === notificationId
       ? { ...notification, isRead: true }
       : notification,
   );
 
-  return saveNotifications(userId, notifications);
+  return saveNotifications(userId, role, notifications);
 }
 
-export function markAllNotificationsRead(userId, currentNotifications) {
+export function markAllNotificationsRead(userId, role, currentNotifications) {
   return saveNotifications(
     userId,
+    role,
     currentNotifications.map((notification) => ({
       ...notification,
       isRead: true,

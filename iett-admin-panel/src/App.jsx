@@ -103,6 +103,13 @@ function normalizeNotification(type, payload = {}) {
       occurredAt: normalizeOccurredAt(payload.evaluationDate),
       targetPage: "driverPerformance",
     },
+    DriverExplanationSubmitted: {
+      entityId: normalizeEntityId(payload.investigationId),
+      title: "Şoför Açıklaması Geldi",
+      message: payload.message || "Şoför açıklaması gönderildi; nihai kararınız bekleniyor.",
+      occurredAt: normalizeOccurredAt(payload.submittedDate),
+      targetPage: "inspectorComplaints",
+    },
   };
   const configuration = configurations[type];
 
@@ -141,6 +148,7 @@ function App() {
   const [complaintsRefreshKey, setComplaintsRefreshKey] = useState(0);
   const [tripsRefreshKey, setTripsRefreshKey] = useState(0);
   const [performanceRefreshKey, setPerformanceRefreshKey] = useState(0);
+  const [inspectorComplaintsRefreshKey, setInspectorComplaintsRefreshKey] = useState(0);
 
   const closeComplaintNotification = useCallback(() => {
     setToastQueue((current) => current.slice(1));
@@ -151,9 +159,9 @@ function App() {
     setNotifications([]);
     setToastQueue([]);
 
-    if (currentUser?.role !== "Driver") return;
+    if (!(["Driver", "Inspector"].includes(currentUser?.role))) return;
 
-    const storedNotifications = loadNotifications(currentUser.userId);
+    const storedNotifications = loadNotifications(currentUser.userId, currentUser.role);
     notificationsRef.current = storedNotifications;
     setNotifications(storedNotifications);
   }, [currentUser]);
@@ -161,11 +169,12 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    if (currentUser?.role !== "Driver" || !token) {
+    if (!(["Driver", "Inspector"].includes(currentUser?.role)) || !token) {
       return undefined;
     }
 
     const connectionUserId = Number(currentUser.userId);
+    const connectionRole = currentUser.role;
     let isActive = true;
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(NOTIFICATION_HUB_URL, {
@@ -180,7 +189,7 @@ function App() {
 
       if (
         !isActive ||
-        activeUser?.role !== "Driver" ||
+        activeUser?.role !== connectionRole ||
         Number(activeUser.userId) !== connectionUserId
       ) {
         return;
@@ -191,6 +200,7 @@ function App() {
 
       const result = addNotification(
         connectionUserId,
+        connectionRole,
         notificationsRef.current,
         notification,
       );
@@ -207,6 +217,8 @@ function App() {
         setTripsRefreshKey((current) => current + 1);
       } else if (type === "PerformanceEvaluated") {
         setPerformanceRefreshKey((current) => current + 1);
+      } else if (type === "DriverExplanationSubmitted") {
+        setInspectorComplaintsRefreshKey((current) => current + 1);
       }
     };
 
@@ -216,10 +228,13 @@ function App() {
       acceptNotification("TripAssigned", payload);
     const handlePerformanceEvaluated = (payload) =>
       acceptNotification("PerformanceEvaluated", payload);
+    const handleDriverExplanationSubmitted = (payload) =>
+      acceptNotification("DriverExplanationSubmitted", payload);
 
     connection.on("ComplaintForwarded", handleComplaintForwarded);
     connection.on("TripAssigned", handleTripAssigned);
     connection.on("PerformanceEvaluated", handlePerformanceEvaluated);
+    connection.on("DriverExplanationSubmitted", handleDriverExplanationSubmitted);
     connection.start().catch((error) => {
       console.error("Bildirim bağlantısı kurulamadı.", error);
     });
@@ -229,6 +244,7 @@ function App() {
       connection.off("ComplaintForwarded", handleComplaintForwarded);
       connection.off("TripAssigned", handleTripAssigned);
       connection.off("PerformanceEvaluated", handlePerformanceEvaluated);
+      connection.off("DriverExplanationSubmitted", handleDriverExplanationSubmitted);
       connection.stop().catch(() => {});
     };
   }, [currentUser]);
@@ -276,10 +292,11 @@ function App() {
   }
 
   function handleNotificationOpen(notification) {
-    if (currentUser?.role !== "Driver") return;
+    if (!(["Driver", "Inspector"].includes(currentUser?.role))) return;
 
     const updatedNotifications = markNotificationRead(
       currentUser.userId,
+      currentUser.role,
       notificationsRef.current,
       notification.id,
     );
@@ -290,10 +307,11 @@ function App() {
   }
 
   function handleMarkAllNotificationsRead() {
-    if (currentUser?.role !== "Driver") return;
+    if (!(["Driver", "Inspector"].includes(currentUser?.role))) return;
 
     const updatedNotifications = markAllNotificationsRead(
       currentUser.userId,
+      currentUser.role,
       notificationsRef.current,
     );
     notificationsRef.current = updatedNotifications;
@@ -338,7 +356,7 @@ function App() {
       case "users":
         return <UsersPage />;
       case "inspectorComplaints":
-        return <InspectorComplaintsPage />;
+        return <InspectorComplaintsPage refreshKey={inspectorComplaintsRefreshKey} />;
       case "inspectorCertificates":
         return <InspectorCertificatesPage />;
       case "performanceEvaluation":
@@ -395,7 +413,7 @@ function App() {
             {sidebarOpen ? "←" : "→"}
           </button>
 
-          {currentUser.role === "Driver" && (
+          {["Driver", "Inspector"].includes(currentUser.role) && (
             <NotificationCenter
               notifications={notifications}
               onNotificationClick={handleNotificationOpen}

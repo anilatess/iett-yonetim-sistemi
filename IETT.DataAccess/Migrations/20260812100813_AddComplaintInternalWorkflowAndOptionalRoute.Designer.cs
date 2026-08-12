@@ -4,6 +4,7 @@ using IETT.DataAccess.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IETT.DataAccess.Migrations
 {
     [DbContext(typeof(IETTDbContext))]
-    partial class IETTDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812100813_AddComplaintInternalWorkflowAndOptionalRoute")]
+    partial class AddComplaintInternalWorkflowAndOptionalRoute
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -145,9 +148,7 @@ namespace IETT.DataAccess.Migrations
 
                     b.Property<string>("TrackingCode")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .UseCollation("Turkish_100_CI_AS");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TripId")
                         .HasColumnType("int");
@@ -162,10 +163,6 @@ namespace IETT.DataAccess.Migrations
                     b.HasIndex("RouteId");
 
                     b.HasIndex("StopId");
-
-                    b.HasIndex("TrackingCode")
-                        .IsUnique()
-                        .HasDatabaseName("UX_Complaints_TrackingCode");
 
                     b.HasIndex("TripId");
 

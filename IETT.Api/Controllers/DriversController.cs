@@ -3,6 +3,9 @@ using IETT.Business.Abstract;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Certificates;
 using IETT.Api.Models;
+using IETT.Api.Hubs;
+using IETT.Entity.DTOs.Investigations;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,13 +17,16 @@ namespace IETT.Api.Controllers
     {
         private readonly IDriverService _driverService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IHubContext<NotificationHub> _notificationHub;
 
         public DriversController(
             IDriverService driverService,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IHubContext<NotificationHub> notificationHub)
         {
             _driverService = driverService;
             _environment = environment;
+            _notificationHub = notificationHub;
         }
 
         [HttpGet("me/dashboard")]
@@ -116,6 +122,43 @@ namespace IETT.Api.Controllers
             }
 
             return Ok(complaints);
+        }
+
+        [HttpPost("me/investigations/{investigationId:int}/explanation")]
+        [Authorize(Roles = "Driver")]
+        public async Task<IActionResult> SubmitComplaintExplanation(
+            int investigationId, DriverExplanationDto dto)
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+                return Unauthorized();
+            if (string.IsNullOrWhiteSpace(dto.Explanation))
+                return BadRequest(new { message = "Şoför açıklaması boş olamaz." });
+
+            var result = await _driverService.SubmitExplanationAsync(userId, investigationId, dto);
+            if (result.Status == DriverExplanationStatus.Success)
+            {
+                if (result.InspectorUserId.HasValue)
+                {
+                    await _notificationHub.Clients
+                        .Group(NotificationGroupNames.ForInspectorUser(result.InspectorUserId.Value))
+                        .SendAsync("DriverExplanationSubmitted", new
+                        {
+                            result.InvestigationId, result.ComplaintId, result.SubmittedDate,
+                            Message = "Şoför açıklaması gönderildi; nihai kararınız bekleniyor."
+                        });
+                }
+                return NoContent();
+            }
+
+            return result.Status switch
+            {
+                DriverExplanationStatus.DriverNotFound => NotFound(new { message = "Şoför kaydı bulunamadı." }),
+                DriverExplanationStatus.InvestigationNotFound => NotFound(new { message = "İnceleme bulunamadı." }),
+                DriverExplanationStatus.NotAssigned => StatusCode(403, new { message = "Bu şikâyet giriş yapan şoföre ait değil." }),
+                DriverExplanationStatus.AlreadySubmitted => Conflict(new { message = "Bu şikâyet için daha önce açıklama gönderilmiş." }),
+                DriverExplanationStatus.AlreadyCompleted => Conflict(new { message = "Tamamlanan şikâyet değiştirilemez." }),
+                _ => Conflict(new { message = "Şikâyet şoför açıklaması bekleme aşamasında değil." })
+            };
         }
 
         [HttpGet("me/certificates")]

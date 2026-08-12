@@ -32,6 +32,17 @@
 .public-result-details div{padding:14px;border-radius:11px;background:#f7f9fc}
 .public-result-details dt{color:#78879a;font-size:12px;font-weight:700;text-transform:uppercase}
 .public-result-details dd{margin:6px 0 0;color:#253851;font-weight:800}
+.public-view-tabs{display:flex;gap:10px;margin-bottom:24px;padding:5px;border-radius:12px;background:#eef2f7}
+.public-view-tabs button{flex:1;padding:10px;border-radius:9px;background:transparent;color:#475569;font-weight:700;cursor:pointer}
+.public-view-tabs button.active{background:#fff;color:#174a91;box-shadow:0 2px 8px rgba(15,23,42,.1)}
+.public-tracking form label{display:flex;flex-direction:column;gap:8px;color:#253851;font-weight:700}
+.public-tracking input{width:100%;padding:12px 14px;border:1px solid #d4deea;border-radius:11px;font:inherit}
+.public-tracking-result{margin-top:24px;padding:22px;border-radius:16px;background:#f0f7ff;text-align:center;overflow-wrap:anywhere}
+.public-tracking-result>strong{color:#123b78;font-size:clamp(20px,5vw,30px);letter-spacing:1px}
+.public-tracking-result>p{color:#334155;font-size:18px;font-weight:800}
+.public-tracking-result section{margin-top:18px;padding-top:18px;border-top:1px solid #bfdbfe;text-align:left}
+.public-tracking-result section h2{margin:0 0 8px;color:#174a91;font-size:18px}
+.public-tracking-result section p{margin:0;color:#334155;line-height:1.6;white-space:pre-wrap}
 
 @media(max-width:650px){
   .public-complaint-page{align-items:flex-start;padding:16px}

@@ -29,6 +29,13 @@ export async function decideInvestigation(id, decision, result) {
   });
 }
 
+export function finalizeInvestigation(id, result) {
+  return apiFetch(`${API_URL}/me/investigations/${id}/final-decision`, {
+    method: "POST",
+    body: JSON.stringify({ result }),
+  });
+}
+
 export const getInspectorDrivers = () => apiFetch(`${API_URL}/me/drivers`);
 export const getInspectorTrips = () => apiFetch(`${API_URL}/me/trips`);
 

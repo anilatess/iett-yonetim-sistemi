@@ -3,6 +3,7 @@ using IETT.Entity.DTOs.Complaints;
 using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
+using IETT.Entity.DTOs.Investigations;
 
 namespace IETT.Business.Abstract
 {
@@ -17,6 +18,21 @@ namespace IETT.Business.Abstract
     {
         public DriverCertificateCreationStatus Status { get; init; }
         public DriverCertificateDto? Certificate { get; init; }
+    }
+
+    public enum DriverExplanationStatus
+    {
+        Success, DriverNotFound, InvestigationNotFound, NotAssigned,
+        InvalidProcessStage, AlreadySubmitted, AlreadyCompleted
+    }
+
+    public class DriverExplanationResult
+    {
+        public DriverExplanationStatus Status { get; init; }
+        public int? InspectorUserId { get; init; }
+        public int InvestigationId { get; init; }
+        public int ComplaintId { get; init; }
+        public DateTime? SubmittedDate { get; init; }
     }
 
     public interface IDriverService
@@ -43,5 +59,7 @@ namespace IETT.Business.Abstract
         Task<List<DriverTripDto>> GetMyTripsAsync(int userId);
 
         Task<List<DriverComplaintDto>?> GetMyComplaintsAsync(int userId);
+        Task<DriverExplanationResult> SubmitExplanationAsync(
+            int userId, int investigationId, DriverExplanationDto dto);
     }
 }

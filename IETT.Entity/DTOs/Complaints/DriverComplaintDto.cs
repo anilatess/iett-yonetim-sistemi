@@ -19,9 +19,9 @@ namespace IETT.Entity.DTOs.Complaints
         public DateTime TripDate { get; set; }
         public TimeSpan DepertureTime { get; set; }
         public TimeSpan ArrivalTime { get; set; }
-        public int RouteId { get; set; }
-        public string RouteCode { get; set; } = string.Empty;
-        public string RouteName { get; set; } = string.Empty;
+        public int? RouteId { get; set; }
+        public string? RouteCode { get; set; }
+        public string? RouteName { get; set; }
         public int VehicleId { get; set; }
         public string VehicleDoorNumber { get; set; } = string.Empty;
         public int? StopId { get; set; }
@@ -31,5 +31,10 @@ namespace IETT.Entity.DTOs.Complaints
         public string? InspectorResult => InvestigationResult;
         public DateTime? InvestigationClosedDate { get; set; }
         public DateTime? ApprovedDate => InvestigationClosedDate;
+        public int InvestigationId { get; set; }
+        public string? DriverExplanation { get; set; }
+        public DateTime? DriverExplanationDate { get; set; }
+        public InvestigationProcessStatus ProcessStatus { get; set; }
+        public string ProcessStatusName { get; set; } = string.Empty;
     }
 }

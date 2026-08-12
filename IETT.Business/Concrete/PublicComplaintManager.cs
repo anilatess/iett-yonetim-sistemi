@@ -37,6 +37,57 @@ namespace IETT.Business.Concrete
                 .ToListAsync();
         }
 
+        public async Task<PublicComplaintTrackingLookupResult> GetByTrackingCodeAsync(
+            string trackingCode)
+        {
+            if (string.IsNullOrWhiteSpace(trackingCode))
+                return new() { Status = PublicComplaintTrackingLookupStatus.NotFound };
+
+            var normalizedTrackingCode = trackingCode.Trim().ToUpperInvariant();
+            var complaints = await _context.Complaints
+                .AsNoTracking()
+                .Where(complaint => EF.Functions.Collate(
+                    complaint.TrackingCode,
+                    "Turkish_100_CI_AS") == normalizedTrackingCode)
+                .Select(complaint => new { complaint.Id, complaint.TrackingCode })
+                .Take(2)
+                .ToListAsync();
+
+            if (complaints.Count == 0)
+                return new() { Status = PublicComplaintTrackingLookupStatus.NotFound };
+            if (complaints.Count > 1)
+                return new() { Status = PublicComplaintTrackingLookupStatus.DuplicateTrackingCode };
+
+            var complaint = complaints[0];
+            var hasOpenInvestigation = await _context.Investigations
+                .AsNoTracking()
+                .AnyAsync(investigation => investigation.ComplaintId == complaint.Id
+                    && investigation.ProcessStatus != InvestigationProcessStatus.Completed);
+
+            var latestCompleted = hasOpenInvestigation
+                ? null
+                : await _context.Investigations
+                    .AsNoTracking()
+                    .Where(investigation => investigation.ComplaintId == complaint.Id
+                        && investigation.ProcessStatus == InvestigationProcessStatus.Completed)
+                    .OrderByDescending(investigation => investigation.ClosedDate)
+                    .ThenByDescending(investigation => investigation.Id)
+                    .Select(investigation => new { investigation.InvestigationResult })
+                    .FirstOrDefaultAsync();
+
+            var isCompleted = !hasOpenInvestigation && latestCompleted is not null;
+            return new()
+            {
+                Status = PublicComplaintTrackingLookupStatus.Success,
+                Complaint = new PublicComplaintTrackingDto
+                {
+                    TrackingCode = complaint.TrackingCode,
+                    Status = isCompleted ? "Tamamlandı" : "Süreç devam ediyor",
+                    FinalDecision = isCompleted ? latestCompleted?.InvestigationResult : null
+                }
+            };
+        }
+
         public async Task<PublicComplaintOperationResult> CreateAsync(
             CreatePublicComplaintDto dto)
         {
@@ -48,7 +99,7 @@ namespace IETT.Business.Concrete
             }
 
             var doorNumber = dto.DoorNumber.Trim();
-            var routeCode = dto.RouteCode.Trim();
+            var routeCode = dto.RouteCode?.Trim();
 
             var vehicleIds = await _context.Vehicles
                 .AsNoTracking()
@@ -66,7 +117,9 @@ namespace IETT.Business.Concrete
                 return PublicComplaintOperationResult.Failure(
                     PublicComplaintOperationStatus.VehicleAmbiguous);
 
-            var routeIds = await _context.BusRoutes
+            var routeIds = string.IsNullOrWhiteSpace(routeCode)
+                ? new List<int>()
+                : await _context.BusRoutes
                 .AsNoTracking()
                 .Where(item => item.RouteCode.ToUpper() == routeCode.ToUpper())
                 .OrderBy(item => item.Id)
@@ -74,7 +127,7 @@ namespace IETT.Business.Concrete
                 .Take(2)
                 .ToListAsync();
 
-            if (routeIds.Count == 0)
+            if (!string.IsNullOrWhiteSpace(routeCode) && routeIds.Count == 0)
                 return PublicComplaintOperationResult.Failure(
                     PublicComplaintOperationStatus.RouteNotFound);
 
@@ -88,11 +141,28 @@ namespace IETT.Business.Concrete
                     PublicComplaintOperationStatus.ComplaintTypeNotFound);
 
             var vehicleId = vehicleIds[0];
-            var routeId = routeIds[0];
-            var tripId = await FindExactTripIdAsync(
+            var tripIds = await FindMatchingTripIdsAsync(
                 vehicleId,
-                routeId,
+                routeIds.Count == 1 ? routeIds[0] : null,
                 dto.IncidentDateTime);
+
+            if (tripIds.Count == 0)
+                return PublicComplaintOperationResult.Failure(PublicComplaintOperationStatus.TripNotFound);
+            if (tripIds.Count > 1)
+                return PublicComplaintOperationResult.Failure(PublicComplaintOperationStatus.TripAmbiguous);
+
+            var trip = await _context.Trips.AsNoTracking()
+                .Where(item => item.Id == tripIds[0])
+                .Select(item => new { item.Id, item.RouteId, item.Driver.GarageId })
+                .SingleAsync();
+            var inspectorId = await _context.Inspectors.AsNoTracking()
+                .Where(item => item.GarageId == trip.GarageId)
+                .OrderBy(item => item.Investigations.Count(x => x.ClosedDate == null))
+                .ThenBy(item => item.Id)
+                .Select(item => (int?)item.Id)
+                .FirstOrDefaultAsync();
+            if (!inspectorId.HasValue)
+                return PublicComplaintOperationResult.Failure(PublicComplaintOperationStatus.InspectorNotAvailable);
 
             var now = DateTime.Now;
             await using var transaction = await _context.Database
@@ -103,10 +173,10 @@ namespace IETT.Business.Concrete
             {
                 TrackingCode = trackingCode,
                 ComplaintTypeId = dto.ComplaintTypeId,
-                RouteId = routeId,
+                RouteId = trip.RouteId,
                 VehicleId = vehicleId,
                 StopId = null,
-                TripId = tripId,
+                TripId = trip.Id,
                 ComplaintDate = dto.IncidentDateTime.Date,
                 ComplaintTime = dto.IncidentDateTime.TimeOfDay,
                 ComplaintDescription = dto.ComplaintDescription.Trim(),
@@ -118,7 +188,15 @@ namespace IETT.Business.Concrete
             try
             {
                 await _context.SaveChangesAsync();
-                await TryCreateInvestigationAsync(complaint, now);
+                _context.Investigations.Add(new Investigation
+                {
+                    ComplaintId = complaint.Id,
+                    InspectorId = inspectorId.Value,
+                    InvestigationTitle = $"Vatandaş Şikâyeti - {complaint.TrackingCode}",
+                    InvestigationDescription = "Vatandaş tarafından oluşturulan şikâyet otomatik olarak atanmıştır.",
+                    ProcessStatus = InvestigationProcessStatus.AwaitingInspectorReview,
+                    CreatedDate = now
+                });
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -214,9 +292,6 @@ namespace IETT.Business.Concrete
             if (string.IsNullOrWhiteSpace(dto.DoorNumber))
                 return PublicComplaintOperationStatus.DoorNumberRequired;
 
-            if (string.IsNullOrWhiteSpace(dto.RouteCode))
-                return PublicComplaintOperationStatus.RouteCodeRequired;
-
             if (dto.IncidentDateTime == default)
                 return PublicComplaintOperationStatus.IncidentDateTimeRequired;
 
@@ -232,9 +307,9 @@ namespace IETT.Business.Concrete
             return PublicComplaintOperationStatus.Success;
         }
 
-        private async Task<int?> FindExactTripIdAsync(
+        private async Task<List<int>> FindMatchingTripIdsAsync(
             int vehicleId,
-            int routeId,
+            int? routeId,
             DateTime incidentDateTime)
         {
             var incidentDate = incidentDateTime.Date;
@@ -242,7 +317,7 @@ namespace IETT.Business.Concrete
             var candidates = await _context.Trips
                 .AsNoTracking()
                 .Where(item => item.VehicleId == vehicleId
-                    && item.RouteId == routeId
+                    && (!routeId.HasValue || item.RouteId == routeId.Value)
                     && item.TripDate >= previousDate
                     && item.TripDate < incidentDate.AddDays(1))
                 .Select(item => new
@@ -271,26 +346,30 @@ namespace IETT.Business.Concrete
                 .Take(2)
                 .ToList();
 
-            return matchingTripIds.Count == 1 ? matchingTripIds[0] : null;
+            return matchingTripIds;
         }
 
         private async Task<string> GenerateTrackingCodeAsync(int year)
         {
             var prefix = $"SIK-{year}-";
-            var lastCode = await _context.Complaints
+            var existingCodes = await _context.Complaints
+                .AsNoTracking()
                 .Where(item => item.TrackingCode.StartsWith(prefix))
-                .OrderByDescending(item => item.TrackingCode)
                 .Select(item => item.TrackingCode)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
 
-            var nextNumber = 1;
-            if (lastCode is not null &&
-                int.TryParse(lastCode[prefix.Length..], out var lastNumber))
-            {
-                nextNumber = lastNumber + 1;
-            }
+            var maximumNumber = existingCodes
+                .Select(code => code.Trim().ToUpperInvariant())
+                .Where(code => code.StartsWith(prefix, StringComparison.Ordinal))
+                .Select(code => int.TryParse(code[prefix.Length..], out var number)
+                    ? (int?)number
+                    : null)
+                .Where(number => number.HasValue)
+                .Select(number => number!.Value)
+                .DefaultIfEmpty(0)
+                .Max();
 
-            return $"{prefix}{nextNumber:D6}";
+            return $"{prefix}{maximumNumber + 1:D6}";
         }
     }
 }

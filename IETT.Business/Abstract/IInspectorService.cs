@@ -16,6 +16,8 @@ namespace IETT.Business.Abstract
         AlreadyCompleted,
         MissingTrip,
         MissingDriver
+        ,InvalidProcessStage
+        ,DriverExplanationRequired
     }
 
     public class InvestigationDecisionResult
@@ -252,5 +254,10 @@ namespace IETT.Business.Abstract
             int investigationId,
             InvestigationDecisionDto dto
         );
+
+        Task<InvestigationDecisionResult> FinalizeInvestigationAsync(
+            int userId,
+            int investigationId,
+            FinalInvestigationDecisionDto dto);
     }
 }

@@ -46,8 +46,8 @@ namespace IETT.Business.Concrete
                     VehicleId = investigation.Complaint.VehicleId,
                     VehicleDoorNumber = investigation.Complaint.Vehicle.DoorNumber,
                     RouteId = investigation.Complaint.RouteId,
-                    RouteCode = investigation.Complaint.BusRoute.RouteCode,
-                    RouteName = investigation.Complaint.BusRoute.RouteName,
+                    RouteCode = investigation.Complaint.BusRoute == null ? null : investigation.Complaint.BusRoute.RouteCode,
+                    RouteName = investigation.Complaint.BusRoute == null ? null : investigation.Complaint.BusRoute.RouteName,
                     StopId = investigation.Complaint.StopId,
                     StopCode = investigation.Complaint.BusStop == null
                         ? null

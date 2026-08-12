@@ -14,14 +14,20 @@ export function createPublicComplaint({
   incidentDateTime,
   complaintDescription,
 }) {
+  const payload = {
+    doorNumber,
+    complaintTypeId,
+    incidentDateTime,
+    complaintDescription,
+  };
+  if (routeCode) payload.routeCode = routeCode;
+
   return apiFetch(API_URL, {
     method: "POST",
-    body: JSON.stringify({
-      doorNumber,
-      routeCode,
-      complaintTypeId,
-      incidentDateTime,
-      complaintDescription,
-    }),
+    body: JSON.stringify(payload),
   });
+}
+
+export function trackPublicComplaint(trackingCode) {
+  return apiFetch(`${API_URL}/${encodeURIComponent(trackingCode)}`);
 }

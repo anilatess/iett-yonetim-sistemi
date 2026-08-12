@@ -13,9 +13,9 @@ namespace IETT.Entity.DTOs.Complaints
         public DateTime CreatedDate { get; set; }
         public ComplaintStatusEnum ComplaintStatus { get; set; }
         public string ComplaintStatusName { get; set; } = string.Empty;
-        public int RouteId { get; set; }
-        public string RouteCode { get; set; } = string.Empty;
-        public string RouteName { get; set; } = string.Empty;
+        public int? RouteId { get; set; }
+        public string? RouteCode { get; set; }
+        public string? RouteName { get; set; }
         public int VehicleId { get; set; }
         public string VehicleDoorNumber { get; set; } = string.Empty;
         public int? StopId { get; set; }

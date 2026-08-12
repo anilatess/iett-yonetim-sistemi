@@ -6,6 +6,7 @@ using IETT.Entity.DTOs.Drivers;
 using IETT.Entity.DTOs.Performances;
 using IETT.Entity.DTOs.Trips;
 using IETT.Entity.Enums;
+using IETT.Entity.DTOs.Investigations;
 using IETT.Entity.Entities;
 using IETT.Business.Utilities;
 using Microsoft.EntityFrameworkCore;
@@ -106,7 +107,9 @@ namespace IETT.Business.Concrete
                                     : complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
                                         ? "Şoföre İletildi"
                                         : "Bilinmiyor",
-                    RouteCode = complaint.BusRoute.RouteCode,
+                    RouteCode = complaint.BusRoute == null
+                        ? "Belirtilmedi"
+                        : complaint.BusRoute.RouteCode,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     TripId = complaint.TripId!.Value
                 })
@@ -493,9 +496,11 @@ namespace IETT.Business.Concrete
                     complaint.TripId.HasValue
                     && complaint.Trip != null
                     && complaint.Trip.DriverId == driverId.Value
-                    && complaint.ComplaintStatus == ComplaintStatusEnum.ForwardedToDriver
                     && complaint.Investigations.Any(investigation =>
-                        investigation.ClosedDate.HasValue))
+                        investigation.ProcessStatus == InvestigationProcessStatus.AwaitingDriverExplanation
+                        || investigation.ProcessStatus == InvestigationProcessStatus.AwaitingInspectorFinalDecision
+                        || (investigation.ProcessStatus == InvestigationProcessStatus.Completed
+                            && investigation.DriverExplanation != null)))
                 .OrderByDescending(complaint => complaint.CreatedDate)
                 .Select(complaint => new DriverComplaintDto
                 {
@@ -525,8 +530,8 @@ namespace IETT.Business.Concrete
                     DepertureTime = complaint.Trip.DepertureTime,
                     ArrivalTime = complaint.Trip.ArrivalTime,
                     RouteId = complaint.RouteId,
-                    RouteCode = complaint.BusRoute.RouteCode,
-                    RouteName = complaint.BusRoute.RouteName,
+                    RouteCode = complaint.BusRoute != null ? complaint.BusRoute.RouteCode : null,
+                    RouteName = complaint.BusRoute != null ? complaint.BusRoute.RouteName : null,
                     VehicleId = complaint.VehicleId,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     StopId = complaint.StopId,
@@ -548,8 +553,65 @@ namespace IETT.Business.Concrete
                         .ThenByDescending(investigation => investigation.Id)
                         .Select(investigation => investigation.ClosedDate)
                         .FirstOrDefault()
+                    ,InvestigationId = complaint.Investigations
+                        .OrderByDescending(x => x.Id).Select(x => x.Id).First(),
+                    DriverExplanation = complaint.Investigations
+                        .OrderByDescending(x => x.Id).Select(x => x.DriverExplanation).FirstOrDefault(),
+                    DriverExplanationDate = complaint.Investigations
+                        .OrderByDescending(x => x.Id).Select(x => x.DriverExplanationDate).FirstOrDefault(),
+                    ProcessStatus = complaint.Investigations
+                        .OrderByDescending(x => x.Id).Select(x => x.ProcessStatus).First(),
+                    ProcessStatusName = complaint.Investigations
+                        .OrderByDescending(x => x.Id).Select(x => x.ProcessStatus).First()
+                            == InvestigationProcessStatus.AwaitingDriverExplanation
+                        ? "Şoför açıklaması bekleniyor"
+                        : complaint.Investigations.OrderByDescending(x => x.Id)
+                            .Select(x => x.ProcessStatus).First()
+                            == InvestigationProcessStatus.AwaitingInspectorFinalDecision
+                            ? "Denetimci kararı bekleniyor"
+                            : "Tamamlandı"
                 })
                 .ToListAsync();
+        }
+
+        public async Task<DriverExplanationResult> SubmitExplanationAsync(
+            int userId, int investigationId, DriverExplanationDto dto)
+        {
+            var driverId = await _context.Drivers.AsNoTracking()
+                .Where(x => x.UserId == userId).Select(x => (int?)x.Id).FirstOrDefaultAsync();
+            if (!driverId.HasValue)
+                return new() { Status = DriverExplanationStatus.DriverNotFound };
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var investigation = await _context.Investigations
+                .Include(x => x.Complaint).ThenInclude(x => x.Trip)
+                .Include(x => x.Inspector)
+                .FirstOrDefaultAsync(x => x.Id == investigationId);
+            if (investigation is null)
+                return new() { Status = DriverExplanationStatus.InvestigationNotFound };
+            if (investigation.Complaint.Trip?.DriverId != driverId.Value)
+                return new() { Status = DriverExplanationStatus.NotAssigned };
+            if (investigation.ClosedDate.HasValue || investigation.ProcessStatus == InvestigationProcessStatus.Completed)
+                return new() { Status = DriverExplanationStatus.AlreadyCompleted };
+            if (investigation.DriverExplanation is not null)
+                return new() { Status = DriverExplanationStatus.AlreadySubmitted };
+            if (investigation.ProcessStatus != InvestigationProcessStatus.AwaitingDriverExplanation)
+                return new() { Status = DriverExplanationStatus.InvalidProcessStage };
+
+            var submittedDate = DateTime.Now;
+            investigation.DriverExplanation = dto.Explanation.Trim();
+            investigation.DriverExplanationDate = submittedDate;
+            investigation.ProcessStatus = InvestigationProcessStatus.AwaitingInspectorFinalDecision;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return new()
+            {
+                Status = DriverExplanationStatus.Success,
+                InspectorUserId = investigation.Inspector.UserId,
+                InvestigationId = investigation.Id,
+                ComplaintId = investigation.ComplaintId,
+                SubmittedDate = submittedDate
+            };
         }
 
         private static string MaskIdentityNumber(string identityNumber)

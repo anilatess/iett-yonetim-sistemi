@@ -67,8 +67,8 @@ namespace IETT.Api.Controllers
                                     ? "Şoföre İletildi"
                                     : "Reddedildi",
                     RouteId = complaint.RouteId,
-                    RouteCode = complaint.BusRoute.RouteCode,
-                    RouteName = complaint.BusRoute.RouteName,
+                    RouteCode = complaint.BusRoute == null ? null : complaint.BusRoute.RouteCode,
+                    RouteName = complaint.BusRoute == null ? null : complaint.BusRoute.RouteName,
                     VehicleId = complaint.VehicleId,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
                     StopId = complaint.StopId,

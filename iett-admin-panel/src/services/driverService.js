@@ -37,3 +37,10 @@ export async function getMyPerformances() {
 export async function getMyComplaints() {
   return apiFetch(`${API_URL}/me/complaints`);
 }
+
+export function submitComplaintExplanation(investigationId, explanation) {
+  return apiFetch(`${API_URL}/me/investigations/${investigationId}/explanation`, {
+    method: "POST",
+    body: JSON.stringify({ explanation }),
+  });
+}

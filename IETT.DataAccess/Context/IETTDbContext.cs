@@ -70,6 +70,28 @@ namespace IETT.DataAccess.Context
                 .Property(complaint => complaint.ComplaintStatus)
                 .HasConversion<int>();
 
+            modelBuilder.Entity<Complaint>()
+                .Property(complaint => complaint.TrackingCode)
+                .HasMaxLength(30)
+                .UseCollation("Turkish_100_CI_AS");
+
+            modelBuilder.Entity<Complaint>()
+                .HasIndex(complaint => complaint.TrackingCode)
+                .IsUnique()
+                .HasDatabaseName("UX_Complaints_TrackingCode");
+
+            modelBuilder.Entity<Investigation>()
+                .Property(investigation => investigation.ProcessStatus)
+                .HasConversion<int>();
+
+            modelBuilder.Entity<Investigation>()
+                .Property(investigation => investigation.DriverExplanation)
+                .HasMaxLength(1000);
+
+            modelBuilder.Entity<Investigation>()
+                .Property(investigation => investigation.InvestigationResult)
+                .HasMaxLength(1000);
+
             modelBuilder.Entity<Trip>()
                 .Property(trip => trip.TripStatus)
                 .HasConversion<int>();

@@ -469,6 +469,29 @@ namespace IETT.Api.Controllers
             };
         }
 
+        [HttpPost("me/investigations/{id:int}/final-decision")]
+        [Authorize(Roles = "Inspector")]
+        public async Task<IActionResult> FinalizeInvestigation(
+            int id, FinalInvestigationDecisionDto dto)
+        {
+            if (!TryGetUserId(out var userId))
+                return Unauthorized();
+            if (string.IsNullOrWhiteSpace(dto.Result))
+                return BadRequest(new { message = "Nihai karar boş olamaz." });
+
+            var result = await _inspectorService.FinalizeInvestigationAsync(userId, id, dto);
+            return result.Status switch
+            {
+                InvestigationCompletionStatus.Completed => NoContent(),
+                InvestigationCompletionStatus.InspectorNotFound => NotFound(new { message = "Denetimci kaydı bulunamadı." }),
+                InvestigationCompletionStatus.InvestigationNotFound => NotFound(new { message = "İnceleme bulunamadı." }),
+                InvestigationCompletionStatus.NotAssigned => StatusCode(403, new { message = "Bu inceleme giriş yapan denetimciye atanmamış." }),
+                InvestigationCompletionStatus.AlreadyCompleted => Conflict(new { message = "Tamamlanan şikâyet değiştirilemez." }),
+                InvestigationCompletionStatus.DriverExplanationRequired => Conflict(new { message = "Nihai karar için önce şoför açıklaması gelmelidir." }),
+                _ => Conflict(new { message = "İnceleme nihai karar aşamasında değil." })
+            };
+        }
+
         private async Task SendComplaintForwardedNotificationAsync(
             InvestigationDecisionResult result)
         {

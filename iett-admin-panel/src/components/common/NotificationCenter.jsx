@@ -60,7 +60,7 @@ export default function NotificationCenter({
         className="notification-center__bell"
         aria-label={`Bildirimler${unreadCount ? `, ${unreadCount} okunmamış` : ""}`}
         aria-expanded={open}
-        aria-controls="driver-notification-panel"
+        aria-controls="notification-panel"
         onClick={() => setOpen((current) => !current)}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
@@ -82,7 +82,7 @@ export default function NotificationCenter({
 
       {open && (
         <section
-          id="driver-notification-panel"
+          id="notification-panel"
           className="notification-center__panel"
           aria-label="Bildirim merkezi"
         >

@@ -117,7 +117,9 @@ namespace IETT.Business.Concrete
                     PersonnelNumber = complaint.Trip == null ? null
                         : complaint.Trip.Driver.PersonnelNumber,
                     VehicleDoorNumber = complaint.Vehicle.DoorNumber,
-                    RouteCode = complaint.BusRoute.RouteCode,
+                    RouteCode = complaint.BusRoute == null
+                        ? "Belirtilmedi"
+                        : complaint.BusRoute.RouteCode,
                     StatusName = complaint.ComplaintStatus == ComplaintStatusEnum.Pending
                         ? "Bekliyor"
                         : complaint.ComplaintStatus == ComplaintStatusEnum.UnderReview
@@ -983,8 +985,12 @@ namespace IETT.Business.Concrete
                     VehicleId = investigation.Complaint.VehicleId,
                     VehicleDoorNumber = investigation.Complaint.Vehicle.DoorNumber,
                     RouteId = investigation.Complaint.RouteId,
-                    RouteCode = investigation.Complaint.BusRoute.RouteCode,
-                    RouteName = investigation.Complaint.BusRoute.RouteName,
+                    RouteCode = investigation.Complaint.BusRoute == null
+                        ? null
+                        : investigation.Complaint.BusRoute.RouteCode,
+                    RouteName = investigation.Complaint.BusRoute == null
+                        ? null
+                        : investigation.Complaint.BusRoute.RouteName,
                     StopId = investigation.Complaint.StopId,
                     StopCode = investigation.Complaint.BusStop != null
                         ? investigation.Complaint.BusStop.StopCode
@@ -1002,6 +1008,16 @@ namespace IETT.Business.Concrete
                     ArrivalTime = investigation.Complaint.Trip == null
                         ? null
                         : investigation.Complaint.Trip.ArrivalTime
+                    ,DriverExplanation = investigation.DriverExplanation
+                    ,DriverExplanationDate = investigation.DriverExplanationDate
+                    ,ProcessStatus = investigation.ProcessStatus
+                    ,ProcessStatusName = investigation.ProcessStatus == InvestigationProcessStatus.AwaitingInspectorReview
+                        ? "Denetimci incelemesi bekleniyor"
+                        : investigation.ProcessStatus == InvestigationProcessStatus.AwaitingDriverExplanation
+                            ? "Şoför açıklaması bekleniyor"
+                            : investigation.ProcessStatus == InvestigationProcessStatus.AwaitingInspectorFinalDecision
+                                ? "Denetçinin nihai kararı bekleniyor"
+                                : "Tamamlandı"
                 })
                 .ToListAsync();
         }
@@ -1058,6 +1074,11 @@ namespace IETT.Business.Concrete
                 return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.AlreadyCompleted);
             }
 
+            if (investigation.ProcessStatus != InvestigationProcessStatus.AwaitingInspectorReview)
+            {
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InvalidProcessStage);
+            }
+
             if (dto.Decision == "Approved")
             {
                 if (!investigation.Complaint.TripId.HasValue || investigation.Complaint.Trip is null)
@@ -1075,12 +1096,19 @@ namespace IETT.Business.Concrete
                 }
             }
 
-            var closedDate = DateTime.Now;
-            investigation.InvestigationResult = dto.Result.Trim();
-            investigation.ClosedDate = closedDate;
-            investigation.Complaint.ComplaintStatus = dto.Decision == "Approved"
-                ? ComplaintStatusEnum.ForwardedToDriver
-                : ComplaintStatusEnum.Rejected;
+            var decisionDate = DateTime.Now;
+            if (dto.Decision == "Approved")
+            {
+                investigation.ProcessStatus = InvestigationProcessStatus.AwaitingDriverExplanation;
+                investigation.Complaint.ComplaintStatus = ComplaintStatusEnum.ForwardedToDriver;
+            }
+            else
+            {
+                investigation.InvestigationResult = dto.Result.Trim();
+                investigation.ClosedDate = decisionDate;
+                investigation.ProcessStatus = InvestigationProcessStatus.Completed;
+                investigation.Complaint.ComplaintStatus = ComplaintStatusEnum.Rejected;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -1095,11 +1123,42 @@ namespace IETT.Business.Concrete
                         TrackingCode = investigation.Complaint.TrackingCode,
                         ComplaintTypeName = investigation.Complaint.ComplaintType.ComplaintTypeName,
                         Message = $"{investigation.Complaint.TrackingCode} takip kodlu şikâyet tarafınıza iletildi.",
-                        ApprovedDate = closedDate,
+                        ApprovedDate = decisionDate,
                         StatusName = "Şoföre İletildi"
                     }
                     : null
             };
+        }
+
+        public async Task<InvestigationDecisionResult> FinalizeInvestigationAsync(
+            int userId, int investigationId, FinalInvestigationDecisionDto dto)
+        {
+            var inspectorId = await _context.Inspectors.AsNoTracking()
+                .Where(x => x.UserId == userId).Select(x => (int?)x.Id).FirstOrDefaultAsync();
+            if (!inspectorId.HasValue)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InspectorNotFound);
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var investigation = await _context.Investigations.Include(x => x.Complaint)
+                .FirstOrDefaultAsync(x => x.Id == investigationId);
+            if (investigation is null)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InvestigationNotFound);
+            if (investigation.InspectorId != inspectorId.Value)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.NotAssigned);
+            if (investigation.ClosedDate.HasValue || investigation.ProcessStatus == InvestigationProcessStatus.Completed)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.AlreadyCompleted);
+            if (investigation.ProcessStatus == InvestigationProcessStatus.AwaitingDriverExplanation)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.DriverExplanationRequired);
+            if (investigation.ProcessStatus != InvestigationProcessStatus.AwaitingInspectorFinalDecision)
+                return InvestigationDecisionResult.Failure(InvestigationCompletionStatus.InvalidProcessStage);
+
+            investigation.InvestigationResult = dto.Result.Trim();
+            investigation.ClosedDate = DateTime.Now;
+            investigation.ProcessStatus = InvestigationProcessStatus.Completed;
+            investigation.Complaint.ComplaintStatus = ComplaintStatusEnum.Resolved;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return new InvestigationDecisionResult { Status = InvestigationCompletionStatus.Completed };
         }
     }
 }

@@ -8,7 +8,7 @@ namespace IETT.Entity.Entities
         public string TrackingCode { get; set; } = string.Empty;
 
         public int ComplaintTypeId { get; set; }
-        public int RouteId { get; set; }
+        public int? RouteId { get; set; }
         public int VehicleId { get; set; }
         public int? StopId { get; set; }
         public int? TripId { get; set; }
@@ -21,7 +21,7 @@ namespace IETT.Entity.Entities
             = ComplaintStatusEnum.Pending;
 
         public ComplaintType ComplaintType { get; set; } = null!;
-        public BusRoute BusRoute { get; set; } = null!;
+        public BusRoute? BusRoute { get; set; }
         public Vehicle Vehicle { get; set; } = null!;
         public BusStop? BusStop { get; set; }
         public Trip? Trip { get; set; }

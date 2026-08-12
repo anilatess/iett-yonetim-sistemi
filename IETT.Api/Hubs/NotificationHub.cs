@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace IETT.Api.Hubs
 {
-    [Authorize(Roles = "Driver")]
+    [Authorize(Roles = "Driver,Inspector")]
     public class NotificationHub : Hub
     {
         public override async Task OnConnectedAsync()
@@ -17,9 +17,11 @@ namespace IETT.Api.Hubs
                 return;
             }
 
-            await Groups.AddToGroupAsync(
-                Context.ConnectionId,
-                NotificationGroupNames.ForDriverUser(userId));
+            var role = Context.User?.FindFirstValue(ClaimTypes.Role);
+            var groupName = role == "Inspector"
+                ? NotificationGroupNames.ForInspectorUser(userId)
+                : NotificationGroupNames.ForDriverUser(userId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
             await base.OnConnectedAsync();
         }

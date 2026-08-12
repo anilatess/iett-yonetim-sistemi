@@ -31,5 +31,9 @@ namespace IETT.Entity.DTOs.Investigations
         public DateTime? TripDate { get; set; }
         public TimeSpan? DepertureTime { get; set; }
         public TimeSpan? ArrivalTime { get; set; }
+        public string? DriverExplanation { get; set; }
+        public DateTime? DriverExplanationDate { get; set; }
+        public IETT.Entity.Enums.InvestigationProcessStatus ProcessStatus { get; set; }
+        public string ProcessStatusName { get; set; } = string.Empty;
     }
 }
