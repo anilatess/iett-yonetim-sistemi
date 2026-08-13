@@ -36,6 +36,7 @@ button {
 }
 
 .content {
+  min-width: 0;
   width: calc(100% - 250px);
   min-height: 100vh;
   margin-left: 250px;
@@ -43,6 +44,11 @@ button {
   transition:
     width 0.25s ease,
     margin-left 0.25s ease;
+}
+
+.content > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .app-toolbar {
@@ -59,10 +65,16 @@ button {
 
 .page-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 26px;
+}
+
+.page-header > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-header h1 {
@@ -79,9 +91,18 @@ button {
   font-size: 15px;
 }
 
+.page-header h1,
+.page-header p {
+  overflow-wrap: anywhere;
+}
+
 .table-card {
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   background: white;
@@ -89,6 +110,7 @@ button {
 }
 
 table {
+  max-width: 100%;
   width: 100%;
   border-collapse: collapse;
 }
@@ -106,6 +128,7 @@ th {
   font-weight: 700;
   letter-spacing: 0.3px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 td {
@@ -113,6 +136,67 @@ td {
   border-bottom: 1px solid #edf2f7;
   color: #334155;
   font-size: 14px;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.responsive-data-table {
+  min-width: 680px;
+}
+
+.complaints-table-card,
+.admin-investigation-table-card,
+.trips-table-card,
+.driver-complaints-card,
+.inspector-investigation-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.complaints-table-wrapper,
+.admin-investigation-table-wrap,
+.trips-table-wrapper,
+.driver-complaints-table-wrapper,
+.inspector-investigation-table,
+.certificate-table-wrapper,
+.vehicles-table-wrapper {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.trip-row-actions,
+.certificate-review-actions,
+td .modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tracking-code,
+.complaint-tracking-code,
+.investigation-tracking,
+.admin-investigation-tracking,
+.trip-route-code,
+.route-code,
+.route-link,
+.certificate-number,
+.user-name-cell,
+td .status-badge,
+td .complaint-status,
+td .trip-status {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.vehicle-actions {
+  white-space: normal;
+}
+
+.vehicle-actions button {
+  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 tbody tr:hover {
@@ -153,7 +237,30 @@ tbody tr:last-child td {
     flex-direction: column;
   }
 
-  .table-card {
-    overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+  .content {
+    padding: 16px;
+  }
+
+  .page-header {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .page-header h1 {
+    font-size: 25px;
+    letter-spacing: -0.4px;
+  }
+
+  .page-header button,
+  .page-header .add-button {
+    max-width: 100%;
+  }
+
+  th,
+  td {
+    padding: 13px 14px;
   }
 }

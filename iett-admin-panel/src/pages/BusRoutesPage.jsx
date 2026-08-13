@@ -191,7 +191,7 @@ function BusRoutesPage({ onSelectRoute, canEdit = true }) {
             Kayıtlı hat bulunamadı.
           </div>
         ) : (
-          <table>
+          <table className="responsive-data-table">
             <thead>
               <tr>
                 <th>ID</th>

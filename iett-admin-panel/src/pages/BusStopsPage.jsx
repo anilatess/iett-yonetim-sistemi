@@ -74,7 +74,7 @@ function BusStopsPage({ selectedRoute, onBack }) {
             Bu hatta bağlı durak bulunamadı.
           </div>
         ) : (
-          <table>
+          <table className="responsive-data-table">
             <thead>
               <tr>
                 <th>Sıra</th>
