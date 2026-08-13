@@ -6,6 +6,7 @@ const ALLOWED_TYPES = new Set([
   "TripAssigned",
   "PerformanceEvaluated",
   "DriverExplanationSubmitted",
+  "InvestigationDeadlineReminder",
 ]);
 
 function getStorageKey(userId, role = "Driver") {

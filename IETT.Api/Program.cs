@@ -7,6 +7,10 @@ using IETT.DataAccess.Concrete.EntityFramework;
 using IETT.DataAccess.Context;
 using IETT.Entity.Entities;
 using IETT.Api.Hubs;
+using IETT.Api.Jobs;
+using IETT.Business.DeadlineReminders;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -70,11 +74,35 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Veritabanı bağlantısı
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
+
 builder.Services.AddDbContext<IETTDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
+        defaultConnection
     )
 );
+
+builder.Services.AddOptions<InvestigationDeadlineOptions>()
+    .Bind(builder.Configuration.GetSection(InvestigationDeadlineOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<InvestigationDeadlineOptions>,
+    InvestigationDeadlineOptionsValidator>();
+builder.Services.AddSingleton<IBusinessDayCalculator, BusinessDayCalculator>();
+builder.Services.AddSingleton<IInvestigationReminderPolicy, InvestigationReminderPolicy>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<InvestigationDeadlineReminderJob>();
+
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(defaultConnection, new SqlServerStorageOptions
+    {
+        SchemaName = "HangFire",
+        PrepareSchemaIfNecessary = true
+    }));
+builder.Services.AddHangfireServer();
 
 // Kullanıcı ve giriş servisleri
 builder.Services.AddScoped<IUserDal, EfUserDal>();
@@ -186,6 +214,16 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+var deadlineOptions = app.Services
+    .GetRequiredService<Microsoft.Extensions.Options.IOptions<InvestigationDeadlineOptions>>().Value;
+var deadlineTimeZone = TimeZoneResolver.Resolve(
+    deadlineOptions.TimeZoneId, deadlineOptions.WindowsTimeZoneId);
+app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<InvestigationDeadlineReminderJob>(
+    "investigation-deadline-reminders",
+    job => job.ExecuteAsync(),
+    deadlineOptions.ScanCron,
+    new RecurringJobOptions { TimeZone = deadlineTimeZone });
 
 // Swagger
 if (app.Environment.IsDevelopment())

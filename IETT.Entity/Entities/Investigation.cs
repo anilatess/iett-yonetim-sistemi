@@ -19,6 +19,8 @@ namespace IETT.Entity.Entities
             = InvestigationProcessStatus.AwaitingInspectorReview;
 
         public DateTime? ClosedDate { get; set; }
+        public DateTime? LastFinalDayReminderSentAt { get; set; }
+        public DateTime? LastOverdueReminderSentAt { get; set; }
 
         public Complaint Complaint { get; set; } = null!;
         public Inspector Inspector { get; set; } = null!;

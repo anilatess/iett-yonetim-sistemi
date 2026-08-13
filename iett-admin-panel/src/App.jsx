@@ -81,6 +81,11 @@ function normalizeOccurredAt(value) {
 }
 
 function normalizeNotification(type, payload = {}) {
+  const deadlineInvestigationId = normalizeEntityId(payload.investigationId);
+  const deadlineSentAt = normalizeOccurredAt(payload.sentAt);
+  const deadlineType = ["FinalBusinessDay", "Overdue"].includes(payload.reminderType)
+    ? payload.reminderType
+    : null;
   const configurations = {
     ComplaintForwarded: {
       entityId: normalizeEntityId(payload.complaintId),
@@ -110,15 +115,32 @@ function normalizeNotification(type, payload = {}) {
       occurredAt: normalizeOccurredAt(payload.submittedDate),
       targetPage: "inspectorComplaints",
     },
+    InvestigationDeadlineReminder:
+      deadlineInvestigationId && deadlineSentAt && deadlineType
+        ? {
+            entityId: deadlineInvestigationId,
+            title: deadlineType === "Overdue"
+              ? "Süresi Aşılmış Şikâyet"
+              : "Son İş Günü",
+            message: typeof payload.message === "string" && payload.message.trim()
+              ? payload.message
+              : deadlineType === "Overdue"
+                ? "Şikâyetin sonuçlandırma süresi aşılmıştır."
+                : "Şikâyetin sonuçlandırılması için son iş günüdür.",
+            occurredAt: deadlineSentAt,
+            targetPage: "inspectorComplaints",
+            id: `InvestigationDeadlineReminder:${deadlineInvestigationId}:${deadlineType}:${deadlineSentAt}`,
+          }
+        : null,
   };
   const configuration = configurations[type];
 
   if (!configuration) return null;
 
   return {
-    id: configuration.entityId
+    id: configuration.id || (configuration.entityId
       ? `${type}:${configuration.entityId}`
-      : `${type}:missing:${Date.now()}`,
+      : `${type}:missing:${Date.now()}`),
     type,
     title: configuration.title,
     message: String(configuration.message),
@@ -144,6 +166,8 @@ function App() {
   const [selectedRoute, setSelectedRoute] = useState(restoreSelectedRoute);
   const [notifications, setNotifications] = useState([]);
   const notificationsRef = useRef([]);
+  const hubConnectionRef = useRef(null);
+  const connectionLifecycleRef = useRef(Promise.resolve());
   const [toastQueue, setToastQueue] = useState([]);
   const [complaintsRefreshKey, setComplaintsRefreshKey] = useState(0);
   const [tripsRefreshKey, setTripsRefreshKey] = useState(0);
@@ -175,7 +199,10 @@ function App() {
 
     const connectionUserId = Number(currentUser.userId);
     const connectionRole = currentUser.role;
-    let isActive = true;
+    let disposed = false;
+    let retryTimer = null;
+    let retryAttempt = 0;
+    let startInProgress = false;
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(NOTIFICATION_HUB_URL, {
         accessTokenFactory: () => localStorage.getItem("token") || "",
@@ -183,12 +210,13 @@ function App() {
       .withAutomaticReconnect()
       .configureLogging(signalR.LogLevel.Warning)
       .build();
+    hubConnectionRef.current = connection;
 
     const acceptNotification = (type, payload) => {
       const activeUser = restoreCurrentUser();
 
       if (
-        !isActive ||
+        disposed ||
         activeUser?.role !== connectionRole ||
         Number(activeUser.userId) !== connectionUserId
       ) {
@@ -197,6 +225,7 @@ function App() {
 
       const notification = normalizeNotification(type, payload);
       if (!notification) return;
+      if (type === "InvestigationDeadlineReminder" && connectionRole !== "Inspector") return;
 
       const result = addNotification(
         connectionUserId,
@@ -219,6 +248,8 @@ function App() {
         setPerformanceRefreshKey((current) => current + 1);
       } else if (type === "DriverExplanationSubmitted") {
         setInspectorComplaintsRefreshKey((current) => current + 1);
+      } else if (type === "InvestigationDeadlineReminder") {
+        setInspectorComplaintsRefreshKey((current) => current + 1);
       }
     };
 
@@ -230,24 +261,82 @@ function App() {
       acceptNotification("PerformanceEvaluated", payload);
     const handleDriverExplanationSubmitted = (payload) =>
       acceptNotification("DriverExplanationSubmitted", payload);
+    const handleInvestigationDeadlineReminder = (payload) =>
+      acceptNotification("InvestigationDeadlineReminder", payload);
 
     connection.on("ComplaintForwarded", handleComplaintForwarded);
     connection.on("TripAssigned", handleTripAssigned);
     connection.on("PerformanceEvaluated", handlePerformanceEvaluated);
     connection.on("DriverExplanationSubmitted", handleDriverExplanationSubmitted);
-    connection.start().catch((error) => {
-      console.error("Bildirim bağlantısı kurulamadı.", error);
-    });
+    connection.on("InvestigationDeadlineReminder", handleInvestigationDeadlineReminder);
+
+    const scheduleInitialRetry = () => {
+      if (disposed || retryTimer) return;
+
+      const retryDelays = [1000, 2000, 5000, 10000];
+      const delay = retryDelays[Math.min(retryAttempt, retryDelays.length - 1)];
+      retryAttempt += 1;
+      retryTimer = window.setTimeout(() => {
+        retryTimer = null;
+        startConnection();
+      }, delay);
+    };
+
+    const startConnection = async () => {
+      if (
+        disposed ||
+        startInProgress ||
+        connection.state !== signalR.HubConnectionState.Disconnected
+      ) {
+        return;
+      }
+
+      startInProgress = true;
+      try {
+        await connectionLifecycleRef.current;
+        if (disposed) return;
+
+        await connection.start();
+        retryAttempt = 0;
+        if (import.meta.env.DEV) {
+          console.info("Bildirim bağlantısı kuruldu.");
+        }
+      } catch (error) {
+        const expectedCleanupAbort = disposed && (
+          error?.name === "AbortError" ||
+          String(error?.message || "").includes("stopped during negotiation")
+        );
+
+        if (!expectedCleanupAbort && !disposed) {
+          console.error("Bildirim bağlantısı kurulamadı.", error);
+          scheduleInitialRetry();
+        }
+      } finally {
+        startInProgress = false;
+      }
+    };
+
+    startConnection();
 
     return () => {
-      isActive = false;
+      disposed = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       connection.off("ComplaintForwarded", handleComplaintForwarded);
       connection.off("TripAssigned", handleTripAssigned);
       connection.off("PerformanceEvaluated", handlePerformanceEvaluated);
       connection.off("DriverExplanationSubmitted", handleDriverExplanationSubmitted);
-      connection.stop().catch(() => {});
+      connection.off("InvestigationDeadlineReminder", handleInvestigationDeadlineReminder);
+
+      const stopPromise = connection.stop().catch(() => {});
+      connectionLifecycleRef.current = stopPromise;
+      if (hubConnectionRef.current === connection) {
+        hubConnectionRef.current = null;
+      }
     };
-  }, [currentUser]);
+  }, [currentUser?.role, currentUser?.userId]);
 
   function handleLogin(userData) {
     const startPage = getStartPage(userData.role);
