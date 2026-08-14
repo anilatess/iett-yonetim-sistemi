@@ -466,14 +466,20 @@ function App() {
   }
 
   if (!currentUser) {
-    if (publicPage === "complaint") {
-      return <PublicComplaintPage onBackToLogin={() => setPublicPage("login")} />;
+    if (["complaint", "tracking"].includes(publicPage)) {
+      return (
+        <PublicComplaintPage
+          initialView={publicPage === "tracking" ? "track" : "create"}
+          onBackToLogin={() => setPublicPage("login")}
+        />
+      );
     }
 
     return (
       <LoginPage
         onLogin={handleLogin}
         onCreateComplaint={() => setPublicPage("complaint")}
+        onTrackComplaint={() => setPublicPage("tracking")}
       />
     );
   }

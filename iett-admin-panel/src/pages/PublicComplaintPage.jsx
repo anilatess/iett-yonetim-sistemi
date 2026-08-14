@@ -17,8 +17,8 @@ const initialForm = () => ({
   incidentDateTime: toLocalDateTimeInput(), complaintDescription: "",
 });
 
-export default function PublicComplaintPage({ onBackToLogin }) {
-  const [view, setView] = useState("create");
+export default function PublicComplaintPage({ onBackToLogin, initialView = "create" }) {
+  const [view, setView] = useState(initialView);
   const [form, setForm] = useState(initialForm);
   const [complaintTypes, setComplaintTypes] = useState([]);
   const [typesLoading, setTypesLoading] = useState(true);

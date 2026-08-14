@@ -234,7 +234,13 @@
   }
 }
 
+.public-complaint-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .public-complaint-link {
+  flex: 1;
   width: 100%;
   padding: 13px;
   border: 1px solid #2867ad;
@@ -247,4 +253,20 @@
 
 .public-complaint-link:hover {
   background: #eff6ff;
+}
+
+.public-complaint-link-secondary {
+  border-color: #94a3b8;
+  color: #475569;
+}
+
+.public-complaint-link-secondary:hover {
+  border-color: #64748b;
+  background: #f8fafc;
+}
+
+@media (max-width: 520px) {
+  .public-complaint-actions {
+    flex-direction: column;
+  }
 }

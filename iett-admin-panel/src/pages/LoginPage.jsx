@@ -3,7 +3,7 @@ import { login } from "../services/authService";
 import iettLogo from "../assets/iett-logo.png";
 import "./LoginPage.css";
 
-function LoginPage({ onLogin, onCreateComplaint }) {
+function LoginPage({ onLogin, onCreateComplaint, onTrackComplaint }) {
   const [form, setForm] = useState({
     userName: "",
     password: "",
@@ -95,13 +95,23 @@ function LoginPage({ onLogin, onCreateComplaint }) {
             {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
           </button>
 
-          <button
-            className="public-complaint-link"
-            type="button"
-            onClick={onCreateComplaint}
-          >
-            Şikâyet Oluştur
-          </button>
+          <div className="public-complaint-actions">
+            <button
+              className="public-complaint-link"
+              type="button"
+              onClick={onCreateComplaint}
+            >
+              Şikâyet Oluştur
+            </button>
+
+            <button
+              className="public-complaint-link public-complaint-link-secondary"
+              type="button"
+              onClick={onTrackComplaint}
+            >
+              Şikâyet Takibi
+            </button>
+          </div>
         </form>
 
         <p className="login-footer">
