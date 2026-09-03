@@ -19,7 +19,7 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controller servisleri
+// Controllers
 builder.Services
     .AddControllers()
     .ConfigureApiBehaviorOptions(options =>
@@ -86,7 +86,7 @@ builder.Services.AddSwaggerGen(options =>
     );
 });
 
-// Veritabanı bağlantısı
+// Database connection
 var defaultConnection =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException(
@@ -97,7 +97,7 @@ builder.Services.AddDbContext<IETTDbContext>(options =>
     options.UseSqlServer(defaultConnection)
 );
 
-// Deadline reminder ayarları
+// Deadline reminder options
 builder.Services
     .AddOptions<InvestigationDeadlineOptions>()
     .Bind(
@@ -146,7 +146,7 @@ builder.Services.AddHangfire(configuration =>
 
 builder.Services.AddHangfireServer();
 
-// Kullanıcı ve giriş servisleri
+// User / Auth services
 builder.Services.AddScoped<IUserDal, EfUserDal>();
 builder.Services.AddScoped<IAuthService, AuthManager>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
@@ -157,25 +157,25 @@ builder.Services.AddScoped<
     PasswordHasher<User>
 >();
 
-// Araç servisleri
+// Vehicle services
 builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
 builder.Services.AddScoped<IVehicleService, VehicleManager>();
 
-// Hat servisleri
+// Bus route services
 builder.Services.AddScoped<IBusRouteDal, EfBusRouteDal>();
 builder.Services.AddScoped<IBusRouteService, BusRouteManager>();
 
-// Driver servisleri
+// Driver services
 builder.Services.AddScoped<IDriverService, DriverManager>();
 
-// Inspector servisleri
+// Inspector services
 builder.Services.AddScoped<IInspectorService, InspectorManager>();
 builder.Services.AddScoped<IInvestigationService, InvestigationManager>();
 
-// Trip servisleri
+// Trip services
 builder.Services.AddScoped<ITripService, TripManager>();
 
-// Public complaint servisi
+// Public complaint services
 builder.Services.AddScoped<
     IPublicComplaintService,
     PublicComplaintManager
@@ -308,7 +308,7 @@ app.Services
         }
     );
 
-// Swagger production dahil açık
+// Swagger hem local hem production ortamında açık
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -318,13 +318,14 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
-// Render HTTPS'i kendi tarafında yönetiyor.
-// Bu satır kalabilir; gerekirse daha sonra kaldırırız.
-app.UseHttpsRedirection();
+// Render HTTPS'i proxy tarafında yönettiği için
+// burada UseHttpsRedirection kullanmıyoruz.
 
 app.UseStaticFiles();
 
-// CORS authentication'dan önce çalışmalı
+app.UseRouting();
+
+// CORS, authentication'dan önce çalışmalı
 app.UseCors("AllowReactApp");
 
 app.UseAuthentication();
