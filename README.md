@@ -1,273 +1,721 @@
-# İETT Yönetim Sistemi
+# 🚌 İETT Yönetim Sistemi
 
-## Proje hakkında
+İETT Yönetim Sistemi; araç, hat, sefer, şoför, denetim, vatandaş şikâyeti, performans ve sertifika süreçlerinin rol bazlı olarak yönetilebildiği full-stack bir web uygulamasıdır.
 
-İETT Yönetim Sistemi; araç, hat, durak, sefer, şoför, sertifika, vatandaş şikâyeti ve denetim süreçlerini tek bir web uygulamasında yönetmek için geliştirilmiştir. Uygulama; yönetici, denetimci ve şoför kullanıcılarına rollerine göre farklı ekranlar sunar. Vatandaşlar ise oturum açmadan şikâyet oluşturabilir.
+Proje; gerçek hayattaki kurumsal bir toplu taşıma yönetim sistemi senaryosu temel alınarak geliştirilmiştir.
 
-Proje katmanlı bir yapıya sahiptir. React istemcisi HTTP üzerinden ASP.NET Core Web API'ye istek gönderir. API katmanı JWT kimliğini ve rol yetkilerini doğruladıktan sonra işlemleri Business katmanına aktarır. Business katmanı iş kurallarını yürütür; DataAccess katmanı Entity Framework Core ve `IETTDbContext` aracılığıyla SQL Server'a erişir. Entity katmanı veritabanı varlıklarını, enum'ları ve istemciyle paylaşılan DTO'ları içerir. Şoföre iletilen şikâyetler, yeni sefer görevleri ve performans değerlendirmeleri JWT ile korunan SignalR hub üzerinden anlık olarak bildirilir.
+---
 
-## Kullanılan teknolojiler
+## 🌐 Canlı Demo
 
-- ASP.NET Core Web API, .NET 8
-- Entity Framework Core 8 ve SQL Server sağlayıcısı
-- SQL Server; yerel geliştirmede SQL Server Express LocalDB kullanılabilir
-- React 19 ve React DOM
-- Vite 8 ve `@vitejs/plugin-react`
-- ASP.NET Core SignalR ve `@microsoft/signalr`
-- JWT Bearer Authentication ve `System.IdentityModel.Tokens.Jwt`
-- ASP.NET Core Identity `PasswordHasher<TUser>`
-- Swagger/OpenAPI (`Swashbuckle.AspNetCore`)
-- OXLint
+**Frontend**
 
-Paketlerin kesin sürümleri ilgili `.csproj`, `package.json` ve `package-lock.json` dosyalarında yer alır.
+https://iett-yonetim-sistemi-dun.vercel.app
 
-## Proje yapısı
+**API / Swagger**
 
-| Dizin | Sorumluluk |
-| --- | --- |
-| `IETT.Api` | Controller'lar, JWT ve CORS yapılandırması, bağımlılık enjeksiyonu, Swagger, statik sertifika dosyaları ve SignalR hub. |
-| `IETT.Business` | Kimlik doğrulama, token üretimi ve araç, hat, sefer, şoför, denetimci, şikâyet ve inceleme iş kuralları. |
-| `IETT.DataAccess` | EF Core DbContext, repository uygulamaları, migration'lar ve isteğe bağlı geliştirme veri betikleri. |
-| `IETT.Entity` | Veritabanı varlıkları, DTO'lar, enum'lar ve ortak entity arayüzü. |
-| `IETT.Core` | DataAccess tarafından kullanılan genel repository sözleşmesi. |
-| `iett-admin-panel` | React/Vite tabanlı, rol bazlı web arayüzü ve API servisleri. |
+https://iett-api.onrender.com/swagger
 
-## Roller ve yetkiler
+> **Not:** Backend Render Free üzerinde çalışmaktadır. Uzun süre kullanılmadığında servis uyku moduna geçebilir. Bu nedenle ilk açılış birkaç saniye daha uzun sürebilir.
+
+---
+
+## 🎯 Projenin Amacı
+
+Bu projenin temel amacı; farklı kullanıcı rollerinin yalnızca kendi yetkileri doğrultusunda işlem yapabildiği, gerçek hayattaki toplu taşıma operasyonlarını modelleyen bir yönetim sistemi geliştirmektir.
+
+Projede özellikle şu konular üzerinde çalışılmıştır:
+
+- Rol bazlı yetkilendirme
+- Kullanıcı yönetimi
+- Araç yönetimi
+- Hat ve durak yönetimi
+- Sefer yönetimi
+- Garaj bazlı veri erişimi
+- Vatandaş şikâyet sistemi
+- Şikâyet inceleme ve yönlendirme akışı
+- Şoför performans değerlendirmesi
+- Sertifika yönetimi
+- SignalR ile gerçek zamanlı bildirimler
+- Hangfire ile arka plan görevleri
+- JWT Authentication
+- Azure SQL production veritabanı
+
+---
+
+## 🧱 Kullanılan Teknolojiler
+
+### Backend
+
+- C#
+- ASP.NET Core Web API
+- .NET 8
+- Entity Framework Core
+- JWT Authentication
+- Role Based Authorization
+- SignalR
+- Hangfire
+- Swagger / OpenAPI
+
+### Frontend
+
+- React
+- JavaScript
+- Vite
+- CSS
+- REST API
+- SignalR Client
+
+### Database
+
+- Microsoft SQL Server
+- Entity Framework Core Code First
+- Azure SQL Database
+
+### Deployment
+
+- Vercel
+- Render
+- Azure SQL
+- Docker
+
+---
+
+## 🏗️ Mimari
+
+Backend tarafında katmanlı mimari kullanılmıştır.
+
+```text
+IETT.Api
+   ↓
+IETT.Business
+   ↓
+IETT.DataAccess
+   ↓
+IETT.Entity
+   ↓
+SQL Server / Azure SQL
+```
+
+### Katmanlar
+
+**IETT.Api**
+
+Controller'lar, JWT yapılandırması, SignalR Hub, Hangfire ve API configuration işlemlerini içerir.
+
+**IETT.Business**
+
+İş kurallarının ve servislerin bulunduğu katmandır.
+
+**IETT.DataAccess**
+
+Entity Framework Core, repository yapısı ve veritabanı erişim işlemlerini içerir.
+
+**IETT.Entity**
+
+Entity modellerini ve DTO'ları içerir.
+
+**IETT.Core**
+
+Projede ortak kullanılan altyapı bileşenlerini içerir.
+
+---
+
+# 👥 Roller
+
+## Admin
+
+Admin sistem genelindeki yönetim ekranlarına erişebilir.
+
+- Kullanıcıları görüntüleyebilir.
+- Araçları yönetebilir.
+- Hatları ve durakları inceleyebilir.
+- Tüm seferleri görüntüleyebilir.
+- Denetim süreçlerini inceleyebilir.
+- Sistem genelindeki operasyonları takip edebilir.
+
+---
+
+## Denetimci
+
+Denetimci yalnızca kendi garajı ve sorumluluk alanıyla ilişkili veriler üzerinde işlem yapabilir.
+
+- Kendi garajındaki şoförleri görüntüleyebilir.
+- Kendi garajındaki seferleri yönetebilir.
+- Yeni sefer oluşturabilir.
+- Sefer bilgilerini güncelleyebilir.
+- Sefer iptal edebilir.
+- Kendisine atanmış şikâyetleri inceleyebilir.
+- Şikâyeti onaylayabilir veya reddedebilir.
+- Şoför performans değerlendirmesi oluşturabilir.
+
+---
+
+## Şoför
+
+Şoför yalnızca kendi hesabıyla ilişkili verilere erişebilir.
+
+- Kendi seferlerini görüntüleyebilir.
+- Kendisine iletilen şikâyetleri görebilir.
+- Performans değerlendirmelerini inceleyebilir.
+- Sertifikalarını görüntüleyebilir.
+- Sertifika yükleyebilir.
+- SignalR üzerinden gerçek zamanlı bildirim alabilir.
+
+---
+
+## Vatandaş
+
+Vatandaş için kullanıcı hesabı gerekmez.
+
+- Şikâyet oluşturabilir.
+- Şikâyet takip kodu alabilir.
+- Takip kodu ile şikâyetin durumunu sorgulayabilir.
+
+---
+
+# 🧪 Demo / Test Rehberi
+
+Projeyi incelemek isteyen bir geliştirici veya işe alım uzmanının aşağıdaki sırayı takip etmesi önerilir.
+
+## 🔐 Demo Hesapları
 
 ### Admin
 
-- Admin dashboard üzerinden araç, şoför, hat, sefer, şikâyet, denetim ve kullanıcı sayılarını görüntüler.
-- Araçları listeler, ekler, günceller, siler ve durumlarını değiştirir.
-- Hatları ve bunlara bağlı durakları görüntüler; hat ekler, günceller ve siler.
-- Şoförleri ve şoför sertifikalarını görüntüler.
-- Seferleri görüntüler.
-- Vatandaş şikâyetlerini ve ayrıntılarını görüntüler.
-- Tüm denetim kayıtlarını ve kullanıcı listesini görüntüler.
-
-### Inspector / Denetimci
-
-- Kendi dashboard özetini görüntüler.
-- Kendi garaj kapsamındaki şoförleri, görevleri, sertifikaları ve incelemeleri görüntüler.
-- Kendi garajındaki şoförlere sefer oluşturur; planlanmış seferleri günceller veya iptal eder.
-- Araçları ve durumlarını görüntüler; araç durumunu değiştirebilir.
-- Hatları ve durakları görüntüler.
-- Bekleyen şoför sertifikalarını onaylar veya gerekçe belirterek reddeder.
-- Kendisine atanmış şikâyet incelemelerinde karar verir.
-- Şoför performans değerlendirmesi oluşturur ve kendi değerlendirme geçmişini görüntüler.
-
-### Driver / Şoför
-
-- Kendi dashboard özetini, seferlerini, kendisine iletilmiş şikâyetleri ve performans geçmişini görüntüler.
-- Sertifikalarını görüntüler ve PDF dosyası olarak yeni sertifika yükler.
-- Denetimci tarafından onaylanan bir şikâyet kendisine iletildiğinde, yeni sefer atandığında veya performans değerlendirmesi oluşturulduğunda SignalR üzerinden anlık bildirim alır.
-- Sağ üstteki bildirim merkezinde okunmamış bildirim sayısını görür; tek bildirimi veya tüm bildirimleri okundu işaretleyebilir ve bildirime tıklayarak ilgili ekrana geçebilir.
-
-### Citizen / Vatandaş
-
-Kodda `Citizen` adlı kimlik doğrulamalı bir rol veya vatandaş dashboard'u yoktur. Vatandaş işlevi anonimdir: giriş ekranındaki bağlantıdan şikâyet türlerini görüntüler ve kapı numarası, hat kodu, olay zamanı, şikâyet türü ve açıklama ile şikâyet oluşturur. Başarılı kayıt sonunda takip kodu alır.
-
-## Temel özellikler
-
-- Araçların eklenmesi, güncellenmesi, silinmesi, listelenmesi ve durumlarının yönetilmesi.
-- Hatların eklenmesi, güncellenmesi, silinmesi ve hat duraklarının sıralı olarak görüntülenmesi.
-- Admin için sefer listeleme; denetimci için garaj kapsamındaki seferleri oluşturma, güncelleme ve iptal etme; şoför için kendi seferlerini görüntüleme.
-- JWT ile giriş ve API/controller seviyesinde rol bazlı yetkilendirme.
-- Şoför sertifikası PDF yükleme, listeleme, denetimci onayı ve gerekçeli ret akışı.
-- Oturum gerektirmeyen vatandaş şikâyeti oluşturma ve takip kodu üretme.
-- Kapı numarası ve hat kodunun tekil kayıtlarla eşleşmesi; olay zamanının aracın ilgili hattaki sefer aralığına düşmesi durumunda kesin sefer ve dolayısıyla şoför eşleştirmesi.
-- Kesin sefer eşleşmesi bulunduğunda şikâyetin, şoförün garajındaki açık inceleme sayısı en az olan denetimciye otomatik atanması. Eşitlikte en küçük denetimci kimliği seçilir.
-- Denetimcinin şikâyeti onaylama veya reddetme kararı. Onaylanan şikâyet şoförün şikâyet listesine aktarılır; reddedilen şikâyet aktarılmaz.
-- Onaylanan şikâyetin ilgili şoföre SignalR ile anlık bildirilmesi.
-- Yeni sefer görevi ve performans değerlendirmesinin ilgili şoföre SignalR ile anlık bildirilmesi.
-- Driver bildirimlerinin kullanıcı bazlı olarak tarayıcı `localStorage` alanında en fazla 50 kayıtla tutulması; okunmamış sayaç ve okundu işaretleme desteği.
-- Admin için şikâyet ve denetim kayıtlarının görüntülenmesi.
-- Admin, denetimci ve şoföre özel dashboard ekranları.
-- Denetimci tarafından şoför performans değerlendirmesi oluşturulması ve geçmişin ilgili rollerde görüntülenmesi.
-
-Şikâyet için tek bir araç, tek bir hat veya tek bir sefer belirlenemezse şikâyet yine kaydedilir; ancak kesin sefer bulunmadığından otomatik inceleme ataması yapılmaz.
-
-Bildirimler veritabanında kalıcı olarak saklanmaz. Yalnızca SignalR bağlantısı açıkken alınan bildirimler ilgili Driver kullanıcısının tarayıcısında tutulur; kullanıcı çevrimdışıyken kaçırılan event'ler sonradan yeniden oynatılmaz.
-
-## Gereksinimler
-
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Node.js ve npm. Frontend'in Vite 8 kullanması nedeniyle güncel ve Vite 8 tarafından desteklenen bir Node.js sürümü gerekir.
-- SQL Server Express LocalDB veya erişilebilir başka bir SQL Server kurulumu
-- Migration komutları için `dotnet-ef` aracı
-- İsteğe bağlı geliştirme SQL betiklerini çalıştırmak için SQLCMD destekli SSMS veya `sqlcmd`
-- PowerShell; örnek kullanıcılar için güvenli parola hash'i üreten betik PowerShell ile yazılmıştır
-
-## Kurulum ve çalıştırma
-
-### 1. Repository'yi klonlama
-
-```powershell
-git clone <repository-url>
-Set-Location IETTYonetimSistemi
+```text
+Kullanıcı Adı: admin
+Şifre: 123456
 ```
 
-### 2. Backend bağımlılıklarını yükleme
+### Denetimci
 
-```powershell
-dotnet restore .\IETTYonetimSistemi.sln
-dotnet tool install --global dotnet-ef --version 8.*
+```text
+Kullanıcı Adı: murat.denetimci
+Şifre: 123456
 ```
 
-`dotnet-ef` zaten kuruluysa ikinci komut yerine şu komut kullanılabilir:
+### Şoför
 
-```powershell
-dotnet tool update --global dotnet-ef --version 8.*
+```text
+Kullanıcı Adı: ali.kaya
+Şifre: 123456
 ```
 
-### 3. Development ortamını ayarlama
 
-`launchSettings.json` içindeki `http` ve `https` profilleri `ASPNETCORE_ENVIRONMENT=Development` değerini zaten tanımlar. Aynı terminalde açıkça ayarlamak için:
 
-```powershell
-$env:ASPNETCORE_ENVIRONMENT = "Development"
+---
+
+# ✅ Test Senaryosu 1 — Admin
+
+Canlı uygulamayı açın:
+
+https://iett-yonetim-sistemi-dun.vercel.app
+
+Admin hesabıyla giriş yapın.
+
+### Kontrol Edilebilecek Alanlar
+
+1. Dashboard ekranını görüntüleyin.
+2. Kullanıcılar ekranını açın.
+3. Kullanıcıların rollerini inceleyin.
+4. Araçlar ekranını açın.
+5. Araç durumlarını inceleyin.
+6. Hatlar ekranını açın.
+7. Bir hattın detayına girip durakları görüntüleyin.
+8. Seferler ekranını inceleyin.
+9. Denetimler ekranından sistemdeki incelemeleri görüntüleyin.
+
+Bu senaryo sistemin genel yönetim tarafını göstermektedir.
+
+---
+
+# ✅ Test Senaryosu 2 — Denetimci
+
+Admin hesabından çıkış yapıp:
+
+```text
+Kullanıcı Adı: murat.denetimci
+Şifre: 123456
 ```
 
-### 4. Connection string ve JWT anahtarını yapılandırma
+ile giriş yapın.
 
-API, `ConnectionStrings:DefaultConnection` ve `Jwt:Key` anahtarlarını okur. Depodaki `appsettings.json` yerel bir makine adına bağlı örnek değerler içerdiği için kendi SQL Server örneğinizle değiştirilmelidir. Gizli değerleri dosyaya yazmadan ortam değişkenleriyle geçmek için örnek:
+### Test Adımları
 
-```powershell
-$env:ConnectionStrings__DefaultConnection = "Server=(localdb)\MSSQLLocalDB;Database=IETTCodeFirstDB;Trusted_Connection=True;TrustServerCertificate=True;"
-$env:Jwt__Key = "<uzun-ve-rastgele-development-jwt-anahtari>"
+1. Denetimci Dashboard ekranını açın.
+2. Bağlı olduğu garaj bilgisini inceleyin.
+3. Kendi garajındaki şoförleri görüntüleyin.
+4. Seferler ekranına girin.
+5. Garajdaki seferleri görüntüleyin.
+6. Uygun olması halinde yeni bir sefer oluşturun.
+7. Mevcut bir seferi güncelleyin.
+8. Şikâyet İncelemeleri ekranını açın.
+9. Açık bir şikâyeti inceleyin.
+10. Şikâyeti onaylayın veya reddedin.
+11. Performans Değerlendirme ekranından bir şoför için değerlendirme oluşturun.
+
+Bu senaryo garaj bazlı yetkilendirmeyi ve operasyon yönetimini göstermektedir.
+
+---
+
+# ✅ Test Senaryosu 3 — Şoför
+
+Denetimci hesabından çıkış yapıp:
+
+```text
+Kullanıcı Adı: ali.kaya
+Şifre: 123456
 ```
 
-`Jwt:Issuer` ve `Jwt:Audience` değerleri `appsettings.json` içinde sırasıyla `IETT.Api` ve `IETT.React` olarak tanımlıdır.
+ile giriş yapın.
 
-> Mevcut `IETT.Api.csproj` içinde `UserSecretsId` bulunmadığından proje şu anda `dotnet user-secrets` için başlatılmış değildir. Ayrıca örnek kullanıcı parolasını okuyan bir User Secrets anahtarı kodda yoktur. Bu nedenle README, gerçekte kullanılmayan bir parola anahtarı veya `dotnet user-secrets set` komutu önermemektedir.
+### Test Adımları
 
-User Secrets tercih edilecekse önce proje kodunun bu yapılandırmayı okuyacak şekilde geliştirilmesi gerekir. Mevcut örnek kullanıcı kurulumu aşağıdaki parola hash'i ve SQLCMD akışını kullanır.
+1. Şoför Dashboard ekranını görüntüleyin.
+2. Günlük seferleri inceleyin.
+3. Seferlerim ekranını açın.
+4. Şikâyetlerim ekranını kontrol edin.
+5. Performansım ekranını açın.
+6. Denetimci tarafından verilen değerlendirmeleri inceleyin.
+7. Sertifikalarım ekranını açın.
+8. Sertifika yükleme alanını inceleyin.
+9. Sağ üstteki bildirim merkezini kontrol edin.
 
-### 5. Migration'ları veritabanına uygulama
+Bu senaryo şoförün yalnızca kendi verilerine erişebildiğini göstermektedir.
 
-Connection string aynı terminalde ayarlıyken:
+---
 
-```powershell
-dotnet ef database update --project .\IETT.DataAccess\IETT.DataAccess.csproj --startup-project .\IETT.Api\IETT.Api.csproj
+# ✅ Test Senaryosu 4 — Vatandaş Şikâyeti
+
+Bu işlem için giriş yapılması gerekmez.
+
+Ana ekrandan:
+
+**Şikâyet Oluştur**
+
+seçeneğine girin.
+
+Vatandaş aşağıdaki bilgileri girer:
+
+- Araç kapı numarası
+- Hat kodu
+- Şikâyet türü
+- Olay tarih ve saati
+- Açıklama
+
+Backend bu bilgiler üzerinden ilgili seferi bulur.
+
+Temel eşleştirme:
+
+```text
+Kapı Numarası
+      +
+Hat Kodu
+      +
+Olay Tarih / Saat
+      ↓
+İlgili Sefer
 ```
 
-Migration'lar şemayı ve dört şoför durumunu (`Working`, `On Leave`, `Off Duty`, `On Trip`) oluşturur. Rol, kullanıcı, garaj, operatör, hat, durak veya şikâyet türü örnekleri migration tarafından eklenmez.
+Sefer üzerinden sistem otomatik olarak:
 
-### 6. Development seed işlemi
-
-Kaynak kodda `SeedData__Enabled` ayarını okuyan otomatik bir seeder yoktur. Dolayısıyla aşağıdaki değişkeni ayarlamak mevcut uygulamada hiçbir işlem başlatmaz:
-
-```powershell
-$env:SeedData__Enabled = "true" # Mevcut kod tarafından okunmaz.
+```text
+Araç
+  ↓
+Sefer
+  ↓
+Hat
+  ↓
+Şoför
+  ↓
+Garaj
+  ↓
+Denetimci
 ```
 
-Depoda bunun yerine isteğe bağlı, idempotent SQL betikleri vardır. `SeedDevelopmentPersonnel.sql`; `Driver` ve `Inspector` rollerinin, gerekli garajların, `İETT`/`ÖHO` operatörlerinin ve betiğin beklediği çalışan şoför durumunun veritabanında önceden, tekil olarak bulunmasını ister. Taze migration yalnızca İngilizce şoför durumlarını eklediğinden bu ön koşullar ayrıca hazırlanmadıkça personel betiği çalışmaz.
+ilişkilerini çözümler.
 
-Örnek kullanıcıların ortak development parolasını gizli girişle belirleyip ASP.NET Core Identity uyumlu hash üretmek için:
+Şikâyet uygun denetimciye otomatik olarak atanır.
 
-```powershell
-.\IETT.DataAccess\Scripts\GenerateDevelopmentPasswordHash.ps1
+---
+
+# ✅ Test Senaryosu 5 — Şikâyet Takibi
+
+Şikâyet oluşturulduktan sonra sistem benzersiz bir takip kodu üretir.
+
+Ana sayfadan:
+
+**Şikâyet Takibi**
+
+ekranını açın.
+
+Takip kodunu girin.
+
+Şikâyet sonuçlanmadıysa:
+
+```text
+Süreç devam ediyor
 ```
 
-Betik parolayı ve doğrulamasını etkileşimli olarak ister; standart çıktıya yalnızca hash'i yazar. Bu hash'i düz metin parolayı paylaşmadan SQLCMD değişkeni olarak kullanın:
+gösterilir.
 
-```powershell
-$samplePasswordHash = .\IETT.DataAccess\Scripts\GenerateDevelopmentPasswordHash.ps1
-sqlcmd -S "(localdb)\MSSQLLocalDB" -d "IETTCodeFirstDB" -E -v SamplePasswordHash="$samplePasswordHash" -i .\IETT.DataAccess\Scripts\SeedDevelopmentPersonnel.sql
-sqlcmd -S "(localdb)\MSSQLLocalDB" -d "IETTCodeFirstDB" -E -i .\IETT.DataAccess\Scripts\SeedDevelopmentVehicles.sql
-Remove-Variable samplePasswordHash
+Denetimci incelemeyi tamamladıktan sonra vatandaş nihai sonucu görebilir.
+
+---
+
+# ✅ Test Senaryosu 6 — Uçtan Uca Akış
+
+Projenin en önemli iş akışı aşağıdaki şekildedir:
+
+```text
+Vatandaş
+   ↓
+Şikâyet Oluşturur
+   ↓
+İlgili Sefer Bulunur
+   ↓
+Araç + Hat + Şoför Eşleştirilir
+   ↓
+Garaj Bulunur
+   ↓
+Denetimci Atanır
+   ↓
+Denetimci İnceleme Yapar
+   ↓
+Onay / Red
 ```
 
-Farklı bir SQL Server kullanıyorsanız `-S`, kimlik doğrulama ve veritabanı parametrelerini kendi kurulumunuza göre değiştirin. Personel betiği geliştirme veritabanı içindir; Production ortamında çalıştırılmamalıdır. Araç betiği de yalnızca development/test için tasarlanmıştır.
+### Şikâyet Onaylanırsa
 
-### 7. Backend'i çalıştırma
-
-HTTP profili, frontend'in varsayılan API adresiyle uyumludur:
-
-```powershell
-dotnet run --project .\IETT.Api\IETT.Api.csproj --launch-profile http
+```text
+Denetimci
+   ↓
+Şikâyeti Onaylar
+   ↓
+Şoföre İletilir
+   ↓
+Şoför Şikâyetlerim Ekranında Görür
+   ↓
+SignalR Bildirimi Alır
 ```
 
-### 8. Frontend bağımlılıklarını yükleme
+### Şikâyet Reddedilirse
 
-```powershell
-Set-Location .\iett-admin-panel
+```text
+Denetimci
+   ↓
+Şikâyeti Reddeder
+   ↓
+İnceleme Kapatılır
+   ↓
+Vatandaş Takip Ekranından Sonucu Görür
+```
+
+---
+
+## 🔔 SignalR
+
+Projede gerçek zamanlı bildirimler için SignalR kullanılmaktadır.
+
+SignalR Hub:
+
+```text
+/hubs/notifications
+```
+
+Başlıca bildirim senaryoları:
+
+- Şikâyetin şoföre iletilmesi
+- Yeni sefer atanması
+- Yeni performans değerlendirmesi oluşturulması
+
+Kullanılan event'ler:
+
+```text
+ComplaintForwarded
+TripAssigned
+PerformanceEvaluated
+```
+
+SignalR bağlantıları JWT ile doğrulanmaktadır.
+
+---
+
+## ⏱️ Hangfire
+
+Zamanlanmış arka plan işlemleri için Hangfire kullanılmaktadır.
+
+Recurring job:
+
+```text
+investigation-deadline-reminders
+```
+
+Bu job açık incelemeleri belirli aralıklarla kontrol eder ve deadline süreçlerini yönetir.
+
+Hangfire storage olarak SQL Server kullanılmaktadır.
+
+---
+
+## 🔐 Authentication & Authorization
+
+Projede JWT tabanlı authentication kullanılmaktadır.
+
+Login endpoint:
+
+```http
+POST /api/Auth/login
+```
+
+Başarılı giriş sonrasında kullanıcıya JWT token üretilir.
+
+Temel roller:
+
+```text
+Admin
+Inspector
+Driver
+```
+
+Frontend üzerindeki rol kontrollerine ek olarak backend endpoint'leri de role-based authorization ile korunmaktadır.
+
+---
+
+## 🗄️ Veritabanı
+
+Production ortamında Azure SQL Database kullanılmaktadır.
+
+Başlıca tablolar:
+
+- Users
+- Roles
+- Drivers
+- Inspectors
+- Garages
+- Operators
+- Vehicles
+- VehicleStatuses
+- BusRoutes
+- BusStops
+- BusRouteStops
+- Trips
+- TripStatuses
+- Complaints
+- ComplaintTypes
+- ComplaintStatuses
+- Investigations
+- DriverPerformance
+- DriverCertificates
+
+---
+
+## ☁️ Production Mimarisi
+
+```text
+                 Kullanıcı
+                     │
+                     ▼
+              Vercel Frontend
+                React + Vite
+                     │
+                     ▼
+              Render Backend
+            ASP.NET Core Web API
+                 .NET 8
+                /     \
+               ▼       ▼
+         Azure SQL   SignalR
+               │
+               ▼
+           Hangfire
+```
+
+### Frontend
+
+```text
+https://iett-yonetim-sistemi-dun.vercel.app
+```
+
+### Backend
+
+```text
+https://iett-api.onrender.com
+```
+
+### Swagger
+
+```text
+https://iett-api.onrender.com/swagger
+```
+
+---
+
+## 🐳 Docker
+
+Backend Render üzerinde Docker container olarak çalışmaktadır.
+
+Repository kökünde bulunan:
+
+```text
+Dockerfile
+```
+
+ASP.NET Core API'nin build ve runtime işlemleri için kullanılmaktadır.
+
+---
+
+## 📁 Proje Yapısı
+
+```text
+iett-yonetim-sistemi
+│
+├── IETT.Api
+├── IETT.Business
+├── IETT.Core
+├── IETT.DataAccess
+├── IETT.Entity
+├── iett-admin-panel
+├── Dockerfile
+├── IETTYonetimSistemi.sln
+└── README.md
+```
+
+---
+
+## 💻 Local Development
+
+### Repository'yi Klonlama
+
+```bash
+git clone https://github.com/anilatess/iett-yonetim-sistemi.git
+cd iett-yonetim-sistemi
+```
+
+### Backend
+
+```bash
+dotnet restore
+dotnet run --project IETT.Api
+```
+
+Backend:
+
+```text
+http://localhost:5147
+```
+
+Swagger:
+
+```text
+http://localhost:5147/swagger
+```
+
+### Frontend
+
+```bash
+cd iett-admin-panel
 npm install
-```
-
-Kilit dosyasına birebir kurulum için `npm install` yerine `npm ci` kullanılabilir.
-
-### 9. Frontend environment ayarları
-
-`.env.development` ve `.env.example` dosyalarında kullanılan gerçek anahtar şudur:
-
-```dotenv
-VITE_API_BASE_URL=http://localhost:5147
-```
-
-Yerel ve gizli bir override gerekiyorsa Git tarafından yok sayılan `iett-admin-panel/.env.local` dosyasını oluşturun. Değerin sonunda `/api` bulunmamalıdır; frontend bunu kendisi ekler. SignalR adresi de aynı taban adresten türetilir.
-
-### 10. Frontend'i çalıştırma
-
-```powershell
 npm run dev
 ```
 
-Vite varsayılan olarak `http://localhost:5173` adresinde açılır. API CORS ilkesi de yalnızca bu origin'e izin verir.
+Frontend:
 
-## Örnek geliştirme hesapları
-
-`SeedDevelopmentPersonnel.sql` aşağıdaki kullanıcı adlarını oluşturur:
-
-| Rol | Kullanıcı adları |
-| --- | --- |
-| Inspector | `elif.yildiz`, `selin.koc` |
-| Driver | `zeynep.arslan`, `can.aydin`, `derya.sahin`, `burak.celik`, `ece.aksoy`, `onur.sen` |
-
-Betik Admin veya Citizen kullanıcısı oluşturmaz. Parola bu README'de veya SQL dosyasında paylaşılmaz; geliştirici tarafından `GenerateDevelopmentPasswordHash.ps1` ile etkileşimli olarak belirlenir ve veritabanına yalnızca Identity uyumlu hash gönderilir. Mevcut kodda bu parola için bir User Secrets anahtarı tanımlı değildir.
-
-## API ve frontend adresleri
-
-`IETT.Api/Properties/launchSettings.json`, frontend environment dosyaları ve `apiConfig.js` ile doğrulanan varsayılan adresler:
-
-| Bileşen | Adres |
-| --- | --- |
-| API (HTTP profili) | `http://localhost:5147` |
-| API (HTTPS profili) | `https://localhost:7034` ve `http://localhost:5147` |
-| Swagger (HTTP profili, yalnızca Development) | `http://localhost:5147/swagger` |
-| Swagger (HTTPS profili, yalnızca Development) | `https://localhost:7034/swagger` |
-| Vite geliştirme sunucusu | `http://localhost:5173` |
-| SignalR hub yolu | `/hubs/notifications` |
-| Varsayılan SignalR hub adresi | `http://localhost:5147/hubs/notifications` |
-
-IIS Express profili ayrıca `http://localhost:18584` ve `https://localhost:44325` adreslerini tanımlar. Frontend varsayılan olarak HTTP proje profilini kullanır.
-
-## Güvenlik notları
-
-- Gerçek parola, JWT imzalama anahtarı veya hassas connection string repository'ye eklenmemelidir.
-- Frontend'e aktarılacak gizli olmayan yerel değerler için Git tarafından yok sayılan `.env.local` kullanılabilir. `VITE_` önekli değerlerin tarayıcı paketine dahil edildiği ve gizli sayılamayacağı unutulmamalıdır.
-- Backend sırları ortam değişkenleriyle verilmelidir. User Secrets kullanılacaksa API projesi önce `UserSecretsId` ve ilgili configuration anahtarlarıyla açıkça yapılandırılmalıdır.
-- Depodaki `appsettings.json` içindeki geliştirme JWT anahtarı Production sırrı olarak kullanılmamalıdır.
-- `SeedDevelopmentPersonnel.sql` ve `SeedDevelopmentVehicles.sql` uygulama başlangıcında otomatik çalışmaz. `SeedData__Enabled` mevcut kodda desteklenmez.
-- Development veri betikleri Production ortamında çalıştırılmamalıdır. Uygulamada Production'da devreye giren otomatik bir development seeder bulunmaz.
-- Swagger yalnızca `ASPNETCORE_ENVIRONMENT=Development` olduğunda etkinleşir.
-- Yüklenen sertifikalar PDF ile sınırlandırılır ve `IETT.Api/wwwroot/uploads/driver-certificates` altında sunulur; Production kurulumu bu dizinin erişim ve saklama politikasını ayrıca yönetmelidir.
-
-## Durdurma ve yeniden çalıştırma
-
-Çalışan backend veya frontend terminalinde `Ctrl+C` ile süreci durdurun.
-
-Repository kökünden backend'i yeniden başlatma:
-
-```powershell
-$env:ASPNETCORE_ENVIRONMENT = "Development"
-$env:ConnectionStrings__DefaultConnection = "<connection-string>"
-$env:Jwt__Key = "<jwt-anahtari>"
-dotnet run --project .\IETT.Api\IETT.Api.csproj --launch-profile http
+```text
+http://localhost:5173
 ```
 
-Ayrı bir terminalde frontend'i yeniden başlatma:
+---
 
-```powershell
-Set-Location .\iett-admin-panel
-npm run dev
+## 🌍 Environment Variables
+
+Production secret bilgileri repository içerisinde tutulmamaktadır.
+
+### Backend
+
+```text
+ConnectionStrings__DefaultConnection
 ```
+
+### Frontend
+
+```text
+VITE_API_BASE_URL
+```
+
+Production API adresi:
+
+```text
+https://iett-api.onrender.com
+```
+
+---
+
+## 🚀 Öne Çıkan Teknik Özellikler
+
+- Full-stack web uygulaması
+- Katmanlı backend mimarisi
+- Repository Pattern
+- Entity Framework Core
+- Code First
+- JWT Authentication
+- Role Based Authorization
+- Garaj bazlı veri izolasyonu
+- React rol bazlı kullanıcı arayüzü
+- REST API
+- Swagger / OpenAPI
+- SignalR gerçek zamanlı bildirimler
+- Hangfire background jobs
+- Vatandaş şikâyet sistemi
+- Şikâyet takip kodu
+- Otomatik şoför / sefer eşleştirme
+- Otomatik denetimci atama
+- Performans değerlendirme sistemi
+- Sertifika yönetimi
+- Docker
+- Render
+- Vercel
+- Azure SQL
+- Production CORS yapılandırması
+
+---
+
+
+## ℹ️ Demo Hakkında
+
+Bu proje eğitim, staj ve portföy amacıyla geliştirilmiştir.
+
+Canlı ortamda bulunan kayıtlar demo/test verileridir.
+
+Render Free kullanıldığı için backend uzun süre kullanılmadığında uyku moduna geçebilir. İlk isteğin yanıtlanması bu nedenle normalden biraz daha uzun sürebilir.
+
+---
+
+## 🔗 Bağlantılar
+
+**Canlı Uygulama**
+
+https://iett-yonetim-sistemi-dun.vercel.app
+
+**Swagger / API**
+
+https://iett-api.onrender.com/swagger
+
+**GitHub**
+
+https://github.com/anilatess/iett-yonetim-sistemi
+
+---
+
+## 👨‍💻 Geliştirici
+
+**İsmail Anıl Ateş**
+
+Computer Programming
+
+GitHub:
+
+https://github.com/anilatess
+
+---
+
+> Bu proje İETT'nin resmi üretim sistemi değildir. Eğitim, staj ve portföy amacıyla geliştirilmiş bağımsız bir yazılım projesidir.
