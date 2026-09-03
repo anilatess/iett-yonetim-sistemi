@@ -20,23 +20,23 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controller servisleri
-builder.Services
-    .AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowReactApp",
+        policy =>
         {
-            var message = context.ModelState.Values
-                .SelectMany(value => value.Errors)
-                .Select(error => error.ErrorMessage)
-                .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error))
-                ?? "Gönderilen bilgiler geçersizdir.";
-
-            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(
-                new { message }
-            );
-        };
-    });
+            policy
+                .WithOrigins(
+                    "http://localhost:5173",
+                    "https://iett-yonetim-sistemi-dun.vercel.app"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    );
+});
 
 // SignalR
 builder.Services.AddSignalR();
