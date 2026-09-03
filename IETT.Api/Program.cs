@@ -20,23 +20,23 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controller servisleri
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(
-        "AllowReactApp",
-        policy =>
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
         {
-            policy
-                .WithOrigins(
-                    "http://localhost:5173",
-                    "https://iett-yonetim-sistemi-dun.vercel.app"
-                )
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        }
-    );
-});
+            var message = context.ModelState.Values
+                .SelectMany(value => value.Errors)
+                .Select(error => error.ErrorMessage)
+                .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error))
+                ?? "Gönderilen bilgiler geçersizdir.";
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(
+                new { message }
+            );
+        };
+    });
 
 // SignalR
 builder.Services.AddSignalR();
@@ -97,7 +97,7 @@ builder.Services.AddDbContext<IETTDbContext>(options =>
     options.UseSqlServer(defaultConnection)
 );
 
-// Investigation Deadline ayarları
+// Deadline reminder ayarları
 builder.Services
     .AddOptions<InvestigationDeadlineOptions>()
     .Bind(
@@ -175,13 +175,13 @@ builder.Services.AddScoped<IInvestigationService, InvestigationManager>();
 // Trip servisleri
 builder.Services.AddScoped<ITripService, TripManager>();
 
-// Anonim şikâyet oluşturma servisi
+// Public complaint servisi
 builder.Services.AddScoped<
     IPublicComplaintService,
     PublicComplaintManager
 >();
 
-// JWT ayarları
+// JWT
 var jwtKey =
     builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
@@ -260,8 +260,6 @@ builder.Services
 builder.Services.AddAuthorization();
 
 // CORS
-// Şimdilik local frontend'e izin veriyoruz.
-// Vercel deployundan sonra Vercel adresini de buraya ekleyeceğiz.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(
@@ -270,7 +268,8 @@ builder.Services.AddCors(options =>
         {
             policy
                 .WithOrigins(
-                    "http://localhost:5173"
+                    "http://localhost:5173",
+                    "https://iett-yonetim-sistemi-dun.vercel.app"
                 )
                 .AllowAnyHeader()
                 .AllowAnyMethod()
@@ -309,23 +308,25 @@ app.Services
         }
     );
 
-// Swagger hem Development hem Production ortamında açık
+// Swagger production dahil açık
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Hangfire Dashboard yalnızca Development ortamında açık
+// Hangfire Dashboard sadece local Development ortamında açık
 if (app.Environment.IsDevelopment())
 {
     app.UseHangfireDashboard("/hangfire");
 }
 
+// Render HTTPS'i kendi tarafında yönetiyor.
+// Bu satır kalabilir; gerekirse daha sonra kaldırırız.
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+// CORS authentication'dan önce çalışmalı
 app.UseCors("AllowReactApp");
 
-// Sıralama önemlidir
 app.UseAuthentication();
 app.UseAuthorization();
 
