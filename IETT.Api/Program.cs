@@ -20,7 +20,8 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 // Controller servisleri
-builder.Services.AddControllers()
+builder.Services
+    .AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
         options.InvalidModelStateResponseFactory = context =>
@@ -31,9 +32,13 @@ builder.Services.AddControllers()
                 .FirstOrDefault(error => !string.IsNullOrWhiteSpace(error))
                 ?? "Gönderilen bilgiler geçersizdir.";
 
-            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new { message });
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(
+                new { message }
+            );
         };
     });
+
+// SignalR
 builder.Services.AddSignalR();
 
 // Swagger
@@ -41,67 +46,104 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "IETT Yönetim Sistemi API",
-        Version = "v1"
-    });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "JWT token değerini giriniz."
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
         {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
+            Title = "IETT Yönetim Sistemi API",
+            Version = "v1"
         }
-    });
+    );
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "JWT token değerini giriniz."
+        }
+    );
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        }
+    );
 });
 
 // Veritabanı bağlantısı
-var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required.");
+var defaultConnection =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection is required."
+    );
 
 builder.Services.AddDbContext<IETTDbContext>(options =>
-    options.UseSqlServer(
-        defaultConnection
-    )
+    options.UseSqlServer(defaultConnection)
 );
 
-builder.Services.AddOptions<InvestigationDeadlineOptions>()
-    .Bind(builder.Configuration.GetSection(InvestigationDeadlineOptions.SectionName))
+// Investigation Deadline ayarları
+builder.Services
+    .AddOptions<InvestigationDeadlineOptions>()
+    .Bind(
+        builder.Configuration.GetSection(
+            InvestigationDeadlineOptions.SectionName
+        )
+    )
     .ValidateOnStart();
-builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<InvestigationDeadlineOptions>,
-    InvestigationDeadlineOptionsValidator>();
-builder.Services.AddSingleton<IBusinessDayCalculator, BusinessDayCalculator>();
-builder.Services.AddSingleton<IInvestigationReminderPolicy, InvestigationReminderPolicy>();
+
+builder.Services.AddSingleton<
+    Microsoft.Extensions.Options.IValidateOptions<InvestigationDeadlineOptions>,
+    InvestigationDeadlineOptionsValidator
+>();
+
+builder.Services.AddSingleton<
+    IBusinessDayCalculator,
+    BusinessDayCalculator
+>();
+
+builder.Services.AddSingleton<
+    IInvestigationReminderPolicy,
+    InvestigationReminderPolicy
+>();
+
 builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddScoped<InvestigationDeadlineReminderJob>();
 
-builder.Services.AddHangfire(configuration => configuration
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(defaultConnection, new SqlServerStorageOptions
-    {
-        SchemaName = "HangFire",
-        PrepareSchemaIfNecessary = true
-    }));
+// Hangfire
+builder.Services.AddHangfire(configuration =>
+    configuration
+        .SetDataCompatibilityLevel(
+            CompatibilityLevel.Version_180
+        )
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(
+            defaultConnection,
+            new SqlServerStorageOptions
+            {
+                SchemaName = "HangFire",
+                PrepareSchemaIfNecessary = true
+            }
+        )
+);
+
 builder.Services.AddHangfireServer();
 
 // Kullanıcı ve giriş servisleri
@@ -109,7 +151,11 @@ builder.Services.AddScoped<IUserDal, EfUserDal>();
 builder.Services.AddScoped<IAuthService, AuthManager>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
 builder.Services.AddScoped<IUserService, UserManager>();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddScoped<
+    IPasswordHasher<User>,
+    PasswordHasher<User>
+>();
 
 // Araç servisleri
 builder.Services.AddScoped<IVehicleDal, EfVehicleDal>();
@@ -130,20 +176,26 @@ builder.Services.AddScoped<IInvestigationService, InvestigationManager>();
 builder.Services.AddScoped<ITripService, TripManager>();
 
 // Anonim şikâyet oluşturma servisi
-builder.Services.AddScoped<IPublicComplaintService, PublicComplaintManager>();
+builder.Services.AddScoped<
+    IPublicComplaintService,
+    PublicComplaintManager
+>();
 
-// JWT doğrulama ayarları
-var jwtKey = builder.Configuration["Jwt:Key"]
+// JWT ayarları
+var jwtKey =
+    builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException(
         "Jwt:Key appsettings.json içerisinde bulunamadı."
     );
 
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+var jwtIssuer =
+    builder.Configuration["Jwt:Issuer"]
     ?? throw new InvalidOperationException(
         "Jwt:Issuer appsettings.json içerisinde bulunamadı."
     );
 
-var jwtAudience = builder.Configuration["Jwt:Audience"]
+var jwtAudience =
+    builder.Configuration["Jwt:Audience"]
     ?? throw new InvalidOperationException(
         "Jwt:Audience appsettings.json içerisinde bulunamadı."
     );
@@ -170,9 +222,10 @@ builder.Services
                 ValidIssuer = jwtIssuer,
                 ValidAudience = jwtAudience,
 
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtKey)
-                ),
+                IssuerSigningKey =
+                    new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtKey)
+                    ),
 
                 ClockSkew = TimeSpan.Zero
             };
@@ -181,11 +234,17 @@ builder.Services
         {
             OnMessageReceived = context =>
             {
-                var requestPath = context.HttpContext.Request.Path;
+                var requestPath =
+                    context.HttpContext.Request.Path;
 
-                if (requestPath.StartsWithSegments("/hubs/notifications"))
+                if (
+                    requestPath.StartsWithSegments(
+                        "/hubs/notifications"
+                    )
+                )
                 {
-                    var accessToken = context.Request.Query["access_token"];
+                    var accessToken =
+                        context.Request.Query["access_token"];
 
                     if (!string.IsNullOrEmpty(accessToken))
                     {
@@ -200,36 +259,63 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-// React uygulamasının API'ye erişebilmesi için
+// CORS
+// Şimdilik local frontend'e izin veriyoruz.
+// Vercel deployundan sonra Vercel adresini de buraya ekleyeceğiz.
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
+    options.AddPolicy(
+        "AllowReactApp",
+        policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:5173"
+                )
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    );
 });
 
 var app = builder.Build();
 
-var deadlineOptions = app.Services
-    .GetRequiredService<Microsoft.Extensions.Options.IOptions<InvestigationDeadlineOptions>>().Value;
-var deadlineTimeZone = TimeZoneResolver.Resolve(
-    deadlineOptions.TimeZoneId, deadlineOptions.WindowsTimeZoneId);
-app.Services.GetRequiredService<IRecurringJobManager>().AddOrUpdate<InvestigationDeadlineReminderJob>(
-    "investigation-deadline-reminders",
-    job => job.ExecuteAsync(),
-    deadlineOptions.ScanCron,
-    new RecurringJobOptions { TimeZone = deadlineTimeZone });
+// Hangfire recurring job
+var deadlineOptions =
+    app.Services
+        .GetRequiredService<
+            Microsoft.Extensions.Options.IOptions<
+                InvestigationDeadlineOptions
+            >
+        >()
+        .Value;
 
-// Swagger
+var deadlineTimeZone =
+    TimeZoneResolver.Resolve(
+        deadlineOptions.TimeZoneId,
+        deadlineOptions.WindowsTimeZoneId
+    );
+
+app.Services
+    .GetRequiredService<IRecurringJobManager>()
+    .AddOrUpdate<InvestigationDeadlineReminderJob>(
+        "investigation-deadline-reminders",
+        job => job.ExecuteAsync(),
+        deadlineOptions.ScanCron,
+        new RecurringJobOptions
+        {
+            TimeZone = deadlineTimeZone
+        }
+    );
+
+// Swagger hem Development hem Production ortamında açık
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Hangfire Dashboard yalnızca Development ortamında açık
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
     app.UseHangfireDashboard("/hangfire");
 }
 
@@ -244,6 +330,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHub<NotificationHub>("/hubs/notifications");
+
+app.MapHub<NotificationHub>(
+    "/hubs/notifications"
+);
 
 app.Run();
